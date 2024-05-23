@@ -1,0 +1,15 @@
+alias pS='sudo pacman -S --needed'
+alias pR='sudo pacman -R'
+alias pSyu='sudo pacman -Syu --needed'
+alias yS='yay -S --needed --sudoloop'
+alias yR='yay -R'
+alias ySyu='yay -Syu --needed --sudoloop'
+
+alias vim=nvim
+alias svim="sudo -E nvim"
+
+alias sshPWno='sudo sed -i "s/PasswordAuthentication yes/PasswordAuthentication no/g" /etc/ssh/sshd_config && sudo systemctl restart sshd'
+alias sshPWyes='sudo sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config && sudo systemctl restart sshd'
+
+alias neofetch=fastfetch
+alias y=yadm
