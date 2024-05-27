@@ -62,7 +62,7 @@ function install_oh_my_zsh() {
     source ~/.zshrc
     
     # check if oh-my-zsh is installed and `omz` is available
-    if [ -d "$HOME/.oh-my-zsh" ] && [ -d "$HOME/.oh-my-zsh/custom" ] && [ $(which omz) ]; then
+    if [ -d "$HOME/.oh-my-zsh" ] && [ -d "$HOME/.oh-my-zsh/custom" ] && [ command -v omz ]; then
         echo "oh-my-zsh is installed"
     else
         echo "oh-my-zsh is not installed"
@@ -95,9 +95,5 @@ function install_plugin() {
     install_lazyvim
 }
 
-function main(){
-    install_required_packages
-    # using zsh as default shell to install plugin
-    zsh
-    install_plugin
-}
+install_required_packages
+install_plugin

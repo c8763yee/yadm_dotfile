@@ -114,6 +114,7 @@ source ~/aliasfile
 
 # custom functions and aliases
 source ~/functions.sh
+source ~/.env
 if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ] && [[ ! -f ~/.notmux ]] && [[ -n "$SSH_CONNECTION" ]]; then
     tmux attach || echo "No available tmux session. create one" && sleep 1 && exec tmux
 elif [[ -f ~/.notmux ]]; then
