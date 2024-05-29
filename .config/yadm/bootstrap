@@ -95,5 +95,11 @@ function install_plugin() {
     install_lazyvim
 }
 
-install_required_packages
-install_plugin
+function main(){
+    install_required_packages
+    # using zsh as default shell to install plugin
+    zsh
+    install_plugin
+}
+
+main

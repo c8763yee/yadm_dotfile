@@ -19,3 +19,4 @@ alias y='yadm'
 
 # supervisorctl aliases
 alias ssu='sudo supervisorctl'
+alias neofetch=fastfetch
