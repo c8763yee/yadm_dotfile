@@ -35,7 +35,7 @@ PACKAGES=(
 
 DEFAULT_ZSH="$HOME/.oh-my-zsh" # oh-my-zsh default path
 
-ZSH=DEFAULT_ZSH
+ZSH=$DEFAULT_ZSH
 ZSH_CUSTOM="$ZSH/custom" # oh-my-zsh custom path
 
 function install_required_packages() {
