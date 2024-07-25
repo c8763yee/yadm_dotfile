@@ -11,8 +11,8 @@ alias vim=nvim
 alias svim="sudo -E nvim"
 
 # ssh aliases
-alias sshPWno='sudo sed -i "s/PasswordAuthentication yes/PasswordAuthentication no/g" /etc/ssh/sshd_config && sudo systemctl restart sshd'
-alias sshPWyes='sudo sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config && sudo systemctl restart sshd'
+alias sshPWno='sudo sed -i "s/^PasswordAuthentication yes$/PasswordAuthentication no/1" /etc/ssh/sshd_config && sudo systemctl restart sshd'
+alias sshPWyes='sudo sed -i "s/^PasswordAuthentication no$/PasswordAuthentication yes/1" /etc/ssh/sshd_config && sudo systemctl restart sshd'
 
 # yadm aliases
 alias y='yadm'
