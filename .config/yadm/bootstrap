@@ -43,6 +43,10 @@ function install_required_packages() {
 		sudo pacman -Syu --noconfirm
 		sudo pacman -S --noconfirm ${PACKAGES[@]}
 		;;
+    "msys2")
+		pacman -Syu --noconfirm
+		pacman -S --noconfirm ${PACKAGES[@]}
+        ;;
 	"debian" | "ubuntu")
 		sudo apt update
 		sudo apt install -y ${PACKAGES[@]}
