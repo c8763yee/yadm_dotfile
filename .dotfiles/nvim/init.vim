@@ -8,7 +8,7 @@ autocmd FocusLost,BufLeave * silent! update
 let g:mapleader = ','
 " 将 q 映射为 <leader>q，因为录制宏的操作比较少，而关掉窗口的操作非常频繁
 noremap <leader>q q
-
+inoremap kj <ESC>
 " 访问系统剪切板
 map <leader>y "+y
 map <leader>p "+p

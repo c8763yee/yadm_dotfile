@@ -18,6 +18,7 @@ require("lazy").setup({
   "folke/which-key.nvim",         -- 用于配置和提示快捷键
   "kkharji/sqlite.lua",           -- 数据库
   "MunifTanjim/nui.nvim",         -- 图形库
+  "github/copilot.vim",
 
   -- 补全
   { "hrsh7th/nvim-cmp" },         -- The completion plugin
