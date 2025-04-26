@@ -18,7 +18,7 @@ Plugin
 - zsh-syntax-highlighting
 - zsh-completions
 - powerlevel10k
-- lazyvim
+- linux_config
 - oh-my-tmux
 COMMENT
 
@@ -82,8 +82,8 @@ function install_zsh_completions() {
 function install_powerlevel10k() {
 	git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$ZSH/custom}/themes/powerlevel10k
 }
-function install_lazyvim() {
-	git clone https://github.com/LazyVim/starter ~/.config/nvim
+function install_linux_config() {
+	curl https://raw.githubusercontent.com/c8763yee/My-Linux-Config/refs/heads/master/scripts/install.sh | sh
 }
 function install_plugin() {
 	install_oh_my_zsh
@@ -91,7 +91,7 @@ function install_plugin() {
 	install_zsh_syntax_highlighting
 	install_zsh_completions
 	install_powerlevel10k
-	install_lazyvim
+	install_linux_config
 }
 
 function main() {
