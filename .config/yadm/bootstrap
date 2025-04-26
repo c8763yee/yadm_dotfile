@@ -29,6 +29,13 @@ PACKAGES=(
 	"neovim"
 	"wget"
 	"tmux"
+	"fzf"
+	"ripgrep"
+	"fd"
+	"lazygit"
+	"clang"
+	"gcc"
+
 )
 
 DEFAULT_ZSH="$HOME/.oh-my-zsh" # oh-my-zsh default path
