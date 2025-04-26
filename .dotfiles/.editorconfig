@@ -1,0 +1,25 @@
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+indent_style = space
+indent_size = 2
+
+[*.{c,h,c.inc,h.inc}]
+indent_style = space
+indent_size = 2
+emacs_mode = c
+
+[*.json]
+indent_style = space
+emacs_mode = python
+
+[*.yaml]
+indent_style = space
+
+[{Makefile,**.mk}]
+# Use tabs for indentation (Makefiles require tabs)
+indent_style = tab
+
+[sh.snippets]
+indent_style = tab

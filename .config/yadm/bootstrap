@@ -90,7 +90,7 @@ function install_powerlevel10k() {
 	git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$ZSH/custom}/themes/powerlevel10k
 }
 function install_linux_config() {
-	curl https://raw.githubusercontent.com/c8763yee/My-Linux-Config/refs/heads/master/scripts/install.sh | sh
+	sh .dotfiles/scripts/install.sh
 }
 function install_plugin() {
 	install_oh_my_zsh
