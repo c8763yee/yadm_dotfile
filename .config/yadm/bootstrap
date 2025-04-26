@@ -31,8 +31,6 @@ PACKAGES=(
 	"tmux"
 	"fzf"
 	"ripgrep"
-	"fd"
-	"lazygit"
 	"clang"
 	"gcc"
 
