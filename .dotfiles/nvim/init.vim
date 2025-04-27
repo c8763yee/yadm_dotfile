@@ -4,6 +4,7 @@ au FocusGained,BufEnter * :checktime
 set autowrite
 autocmd FocusLost,BufLeave * silent! update
 
+set nu rnu
 " 映射 leader 键为 ,
 let g:mapleader = ','
 " 将 q 映射为 <leader>q，因为录制宏的操作比较少，而关掉窗口的操作非常频繁
