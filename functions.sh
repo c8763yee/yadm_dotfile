@@ -24,3 +24,39 @@ function UPDATE() {
         flatpak --user update -y
     fi
 }
+# --- 自動設定 WSL2 portproxy ---
+
+setup_portproxy() {
+    # 只在 WSL 內執行
+    if grep -qEi "(microsoft|wsl)" /proc/version &> /dev/null; then
+	if [[ ! -f .env ]]; then
+		echo "[WSL PortProxy] .env file not found, please create it first."
+		exit 1
+	fi
+
+	source .env
+        # 檢查目前是否已有正確的 portproxy
+        EXISTING=$(powershell.exe -Command "netsh interface portproxy show v4tov4" | grep -i "$WINIP" | grep "$WINPORT" | grep "$WSLIP" | grep "$WSLPORT")
+
+        if [ -z "$EXISTING" ]; then
+            echo "[WSL PortProxy] Setting up portproxy for $WINIP:$WINPORT -> $WSLIP:$WSLPORT..."
+	    
+	    # 刪除舊的（如果有）
+            powershell.exe -Command "Start-Process netsh -ArgumentList 'interface portproxy delete v4tov4 listenport=$WINPORT listenaddress=$WINIP' -Verb RunAs"
+
+            # 加入新的
+            powershell.exe -Command "Start-Process netsh -ArgumentList 'interface portproxy add v4tov4 listenport=$WINPORT listenaddress=$WINIP connectport=$WSLPORT connectaddress=$WSLIP' -Verb RunAs"
+
+            echo "[WSL PortProxy] Done."
+        else
+            echo "[WSL PortProxy] Already exists, skip."
+        fi
+    fi
+}
+
+# 只在第一次進入 zsh session 時執行一次
+if [ -z "$SETUP_PORTPROXY_DONE" ]; then
+    setup_portproxy
+    export SETUP_PORTPROXY_DONE=1
+fi
+

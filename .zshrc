@@ -5,11 +5,11 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
     source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# export PATH=/opt/cuda/bin:/home/c8763yee/.local/bin${PATH:+:${PATH}}
-# export LD_LIBRARY_PATH=/opt/cuda/lib64:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+export PATH=/opt/cuda/bin:/home/c8763yee/.local/bin${PATH:+:${PATH}}
+export LD_LIBRARY_PATH=/opt/cuda/lib64:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 # Add $PATH and $LD_LIBRARY_PATH but without trailing :
-export PATH=${PATH:+${PATH}:}/opt/cuda/bin:/home/c8763yee/.local/bin
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}/opt/cuda/lib64
+#/opt/cuda/bin:/home/c8763yee/.local/bin${PATH:+:${PATH}}export PATH=${PATH:+${PATH}:}/opt/cuda/bin:/home/c8763yee/.local/bin
+#export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}/opt/cuda/lib64
 
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
