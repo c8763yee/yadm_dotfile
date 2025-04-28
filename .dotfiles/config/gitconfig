@@ -61,4 +61,4 @@
 [include]
     path = ~/.gitconfig-local
 [oh-my-zsh]
-	git-commit-alias = 959b6cf5eed78f108dc6e0f46b53816f5168dd3a
+	git-commit-alias = de1ca65dcaebd19f5ca6626616bb79b529362458
