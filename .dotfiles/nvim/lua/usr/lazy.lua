@@ -19,6 +19,7 @@ require("lazy").setup({
   "kkharji/sqlite.lua",           -- 数据库
   "MunifTanjim/nui.nvim",         -- 图形库
   "github/copilot.vim",
+  "t-troebst/perfanno.nvim",      -- 性能分析
 
   -- 补全
   { "hrsh7th/nvim-cmp" },         -- The completion plugin
