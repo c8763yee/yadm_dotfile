@@ -169,7 +169,7 @@ require("lazy").setup({
     'mcauley-penney/visual-whitespace.nvim',
     config = true,
     branch = "compat-v10", -- nvim 0.11 版本不兼容了
-  }, -- 在 visual mode 展示空白字符
+  },                       -- 在 visual mode 展示空白字符
   {
     "yetone/avante.nvim",
     enabled = false,
@@ -211,6 +211,11 @@ require("lazy").setup({
         cppman.input()
       end)
     end,
+  },
+  {
+    "m4xshen/hardtime.nvim",
+    dependencies = { "MunifTanjim/nui.nvim" },
+    opts = {}
   },
   ---@type LazySpec
   {

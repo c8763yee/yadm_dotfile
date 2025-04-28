@@ -13,7 +13,6 @@ local servers = {
   "perlnavigator",
   "ruff",
   "clangd",
-  "clang-format"
   -- "typos_lsp",
   -- "tsserver",
 }

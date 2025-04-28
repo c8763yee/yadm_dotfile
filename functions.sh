@@ -29,12 +29,12 @@ function UPDATE() {
 setup_portproxy() {
     # 只在 WSL 內執行
     if grep -qEi "(microsoft|wsl)" /proc/version &> /dev/null; then
-	if [[ ! -f .env ]]; then
-		echo "[WSL PortProxy] .env file not found, please create it first."
+	if [[ ! -f $HOME/.env ]]; then
+		echo "[WSL PortProxy] $HOME/.env file not found, please create it first."
 		exit 1
 	fi
 
-	source .env
+	source $HOME/.env
         # 檢查目前是否已有正確的 portproxy
         EXISTING=$(powershell.exe -Command "netsh interface portproxy show v4tov4" | grep -i "$WINIP" | grep "$WINPORT" | grep "$WSLIP" | grep "$WSLPORT")
 
