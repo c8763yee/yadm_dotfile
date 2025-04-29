@@ -88,6 +88,7 @@ function install_powerlevel10k() {
 	git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$ZSH/custom}/themes/powerlevel10k
 }
 function install_linux_config() {
+	yadm submodule update --init --remote
 	sh .dotfiles/scripts/install.sh
 }
 function install_plugin() {
