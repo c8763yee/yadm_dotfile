@@ -1,9 +1,0 @@
-patch:
-  schema_list:
-    - schema: double_pinyin_flypy # 小鹤
-    - schema: luna_pinyin_simp # 全拼
-  menu:
-    page_size: 5
-  ascii_composer:
-    switch_key:
-      Shift_L: commit_code
