@@ -1,0 +1,4 @@
+[submodule ".dotfiles"]
+	path = .dotfiles
+	url = https://github.com/c8763yee/My-Linux-Config.git
+	branch = self-use
