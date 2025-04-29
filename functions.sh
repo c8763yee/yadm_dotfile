@@ -36,16 +36,16 @@ setup_portproxy() {
 
 	source $HOME/.env
         # 檢查目前是否已有正確的 portproxy
-        EXISTING=$(powershell.exe -Command "netsh interface portproxy show v4tov4" | grep -i "$WINIP" | grep "$WINPORT" | grep "$WSLIP" | grep "$WSLPORT")
+        EXISTING=$(/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -Command "netsh interface portproxy show v4tov4" | grep -i "$WINIP" | grep "$WINPORT" | grep "$WSLIP" | grep "$WSLPORT")
 
         if [ -z "$EXISTING" ]; then
             echo "[WSL PortProxy] Setting up portproxy for $WINIP:$WINPORT -> $WSLIP:$WSLPORT..."
 	    
 	    # 刪除舊的（如果有）
-            powershell.exe -Command "Start-Process netsh -ArgumentList 'interface portproxy delete v4tov4 listenport=$WINPORT listenaddress=$WINIP' -Verb RunAs"
+            /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -Command "Start-Process netsh -ArgumentList 'interface portproxy delete v4tov4 listenport=$WINPORT listenaddress=$WINIP' -Verb RunAs"
 
             # 加入新的
-            powershell.exe -Command "Start-Process netsh -ArgumentList 'interface portproxy add v4tov4 listenport=$WINPORT listenaddress=$WINIP connectport=$WSLPORT connectaddress=$WSLIP' -Verb RunAs"
+            /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -Command "Start-Process netsh -ArgumentList 'interface portproxy add v4tov4 listenport=$WINPORT listenaddress=$WINIP connectport=$WSLPORT connectaddress=$WSLIP' -Verb RunAs"
 
             echo "[WSL PortProxy] Done."
         else
