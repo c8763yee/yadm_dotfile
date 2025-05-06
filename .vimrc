@@ -2,34 +2,16 @@ set nocompatible
 
 " remap key
 " insert mode
-inoremap jj <Esc>
+inoremap kj <Esc>
 " Visual mode
-vnoremap jj <Esc> 
+vnoremap kj <Esc> 
 " normal mode
 nnoremap <F4> :set invrnu!<CR>
 nnoremap crf :let @" = expand("%")<CR>
 nnoremap cff :let @" = expand("%:p")<CR>
 nnoremap tt :7<CR>VG$:!sort -nk2<CR>
-" indent
-set tabstop=4
-set smartindent
-set shiftwidth=4
-set expandtab
-set softtabstop=4
-filetype indent on
-filetype plugin indent on
-set backspace=indent,eol,start
-
-" syntex
-syntax enable
-set hlsearch incsearch
-set showmatch
-
-" abbr
-iab clsS class Solution:<CR>def
-
 " ruler
-set rnu
+set nu rnu
 
 " style setting
 set ruler
