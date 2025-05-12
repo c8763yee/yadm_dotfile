@@ -11,6 +11,7 @@ Package:
 - neovim
 - wget
 - tmux
+- vim plugins required package
 
 Plugin
 - oh-my-zsh
@@ -33,7 +34,10 @@ PACKAGES=(
 	"ripgrep"
 	"clang"
 	"gcc"
-
+	"nodejs"
+	"npm"
+	"luarocks"
+	"yarn"
 )
 
 DEFAULT_ZSH="$HOME/.oh-my-zsh" # oh-my-zsh default path
@@ -41,12 +45,24 @@ DEFAULT_ZSH="$HOME/.oh-my-zsh" # oh-my-zsh default path
 ZSH=$DEFAULT_ZSH
 ZSH_CUSTOM="$ZSH/custom" # oh-my-zsh custom path
 
+function install_yay(){
+	sudo pacman -S --noconfirm base-devel
+	git clone https://aur.archlinux.org/yay.git
+	cd yay
+	makepkg -si --noconfirm
+}
+
 function install_required_packages() {
 	distro=$(cat /etc/os-release | grep -w "ID" | cut -d "=" -f 2 | tr -d '"')
 	case $distro in
 	"arch")
 		sudo pacman -Syu --noconfirm
 		sudo pacman -S --noconfirm ${PACKAGES[@]}
+
+		# Extra packages
+		install_yay
+		sudo pacman -S --noconfirm lua51 rustup cargo rust-analyzer
+		rustup install stable
 		;;
     "msys2")
 		pacman -Syu --noconfirm
@@ -89,7 +105,7 @@ function install_powerlevel10k() {
 }
 function install_linux_config() {
 	yadm submodule update --init --remote
-	sh .dotfiles/scripts/install.sh
+	sh ~/.dotfiles/scripts/install.sh
 }
 function install_plugin() {
 	install_oh_my_zsh
