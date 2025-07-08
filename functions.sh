@@ -31,7 +31,7 @@ setup_portproxy() {
 	if grep -qEi "(microsoft|wsl)" /proc/version &>/dev/null; then
 		if [[ ! -f $HOME/.env ]]; then
 			echo "[WSL PortProxy] $HOME/.env file not found, please create it first."
-			exit 1
+			return
 		fi
 
 		source $HOME/.env
