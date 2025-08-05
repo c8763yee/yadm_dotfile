@@ -7,7 +7,7 @@ fi
 
 export PATH=/opt/cuda/bin:/home/c8763yee/.local/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/opt/cuda/lib64:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
-TIMEFMT=$'Time Info: %J\n\nreal\t%E\nuser\t%U\nsys\t%S\n\n%P cpu %*E total\n-----------------------'
+TIMEFMT=$'-----------------------\nTime Info: %J\n\nreal\t%E\nuser\t%U\nsys\t%S\n\n%P cpu %(%Xtext+%Ddata %Mmax)k\n%I inputs+%O outputs (%F major+%R minor) pagefaults %Wswaps %*E total\n-----------------------\n'
 # Add $PATH and $LD_LIBRARY_PATH but without trailing :
 #/opt/cuda/bin:/home/c8763yee/.local/bin${PATH:+:${PATH}}export PATH=${PATH:+${PATH}:}/opt/cuda/bin:/home/c8763yee/.local/bin
 #export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}/opt/cuda/lib64
