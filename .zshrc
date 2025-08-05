@@ -83,7 +83,7 @@ zstyle ':omz:update' mode auto      # update automatically without asking
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git vim-interaction pipenv pip aliases zsh-autosuggestions zsh-completions zsh-syntax-highlighting docker docker-compose poetry git-commit git-auto-fetch ssh sudo pep8 github git-hubflow git-lfs alias-finder)
+plugins=(git vim-interaction pipenv pip aliases zsh-autosuggestions zsh-completions zsh-syntax-highlighting docker docker-compose poetry git-commit git-auto-fetch ssh sudo pep8 github git-hubflow git-lfs alias-finder uv colored-man-pages gh history history-substring-search postgres ssh-agent supervisor tmux themes vscode wakeonlan)
 fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
 source $ZSH/oh-my-zsh.sh
 
