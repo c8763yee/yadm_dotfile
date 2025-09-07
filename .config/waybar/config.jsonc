@@ -240,6 +240,6 @@
 		"format": "⚡ {}",
 		"exec": "~/.config/waybar/scripts/get_power.sh",
 		"return-type": "json",
-		"interval": 5 // 每 5 秒更新一次
+		"interval": 1 // 每 1 秒更新一次
 	}
 }
