@@ -8,8 +8,8 @@
 	// Choose the order of the modules
 	"modules-left": [
 		"hyprland/workspaces",
-		"hyprland/mode",
-		"hyprland/scratchpad",
+		"sway/mode",
+		"sway/scratchpad",
 		"custom/media"
 	],
 	"modules-center": [
@@ -20,6 +20,7 @@
 		"idle_inhibitor",
 		"pulseaudio",
 		"network",
+		"custom/power",
 		"power-profiles-daemon",
 		"cpu",
 		"memory",
@@ -31,26 +32,25 @@
 		"battery#bat2",
 		"clock",
 		"tray",
-		// "custom/power",
 		"custom/wlogout"
 	],
 	// Modules configuration
-	// "hyprland/workspaces": {
-	//     "disable-scroll": true,
-	//     "all-outputs": true,
-	//     "warp-on-scroll": false,
-	//     "format": "{name}: {icon}",
-	//     "format-icons": {
-	//         "1": "",
-	//         "2": "",
-	//         "3": "",
-	//         "4": "",
-	//         "5": "",
-	//         "urgent": "",
-	//         "focused": "",
-	//         "default": ""
-	//     }
-	// },
+	"hyprland/workspaces": {
+	    "disable-scroll": true,
+	    "all-outputs": true,
+	    "warp-on-scroll": false,
+	    "format": "{name}: {icon}",
+	    "format-icons": {
+	        "1": "",
+	        "2": "",
+	        "3": "",
+	        "4": "",
+	        "5": "",
+	        "urgent": "",
+	        "focused": "",
+	        "default": ""
+	    }
+	},
 	"keyboard-state": {
 		"numlock": true,
 		"capslock": true,
@@ -60,10 +60,10 @@
 			"unlocked": ""
 		}
 	},
-	"hyprland/mode": {
+	"sway/mode": {
 		"format": "<span style=\"italic\">{}</span>"
 	},
-	"hyprland/scratchpad": {
+	"sway/scratchpad": {
 		"format": "{icon} {count}",
 		"show-empty": false,
 		"format-icons": [
@@ -235,5 +235,11 @@
 	"custom/wlogout": {
 		"format": "(wl)",
 		"on-click": "wlogout"
+	},
+	"custom/power": {
+		"format": "⚡ {}",
+		"exec": "~/.config/waybar/scripts/get_power.sh",
+		"return-type": "json",
+		"interval": 5 // 每 5 秒更新一次
 	}
 }

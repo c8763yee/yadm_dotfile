@@ -212,7 +212,7 @@ label:focus {
     background-color: #f53c3c;
 }
 
-#custom-media {
+#custom-media,custom-power {
     background-color: #66cc99;
     color: #2a5c45;
     min-width: 100px;
