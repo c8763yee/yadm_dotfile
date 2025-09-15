@@ -125,8 +125,6 @@ source ~/aliasfile
 source ~/functions.sh
 source ~/envfile
 
-if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ] && [[ ! -f ~/.notmux ]] && [[ -z "$SSH_CONNECTION" ]]; then
-	tmux attach || (echo "No available tmux session. create one" && exec tmux)
-elif [[ -f ~/.notmux ]]; then
-     rm ~/.notmux
+if [[ $- =~ i ]] && [[ -z "$TMUX" ]] && [[ -n "$SSH_TTY" ]]; then
+  tmux attach-session -t ssh_tmux || tmux new-session -s ssh_tmux
 fi
