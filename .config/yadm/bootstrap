@@ -61,7 +61,7 @@ function install_required_packages() {
 
 		# Extra packages
 		install_yay
-		sudo pacman -S --noconfirm lua51 rustup cargo rust-analyzer
+		sudo pacman -S --noconfirm lua51 rustup cargo rust-analyzer hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland}
 		rustup install stable
 		;;
     "msys2")
