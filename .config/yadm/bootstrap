@@ -62,7 +62,9 @@ function install_required_packages() {
 
 		# Extra packages
 		install_yay
-		sudo pacman -S --noconfirm lua51 rustup cargo rust-analyzer hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland} gnome-keyring
+		sudo pacman -S --noconfirm lua51 rustup cargo rust-analyzer tree-sitter{,-cli} \
+			hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland}\
+			gnome-keyring
 		rustup install stable
 		;;
     "msys2")
