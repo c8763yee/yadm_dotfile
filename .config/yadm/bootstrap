@@ -38,6 +38,7 @@ PACKAGES=(
 	"npm"
 	"luarocks"
 	"yarn"
+	"s-tui"
 )
 
 DEFAULT_ZSH="$HOME/.oh-my-zsh" # oh-my-zsh default path
@@ -61,7 +62,7 @@ function install_required_packages() {
 
 		# Extra packages
 		install_yay
-		sudo pacman -S --noconfirm lua51 rustup cargo rust-analyzer hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland}
+		sudo pacman -S --noconfirm lua51 rustup cargo rust-analyzer hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland} gnome-keyring
 		rustup install stable
 		;;
     "msys2")

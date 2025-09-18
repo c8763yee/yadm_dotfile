@@ -9,17 +9,17 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
     source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-export PATH=/opt/cuda/bin:/home/c8763yee/.local/bin${PATH:+:${PATH}}
-export LD_LIBRARY_PATH=/opt/cuda/lib64:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+export PATH=/home/c8763yee/.local/bin${PATH:+:${PATH}}
 
-if [[ -n $(which snap) ]]; then;
-	export PATH=/snap/bin/:$PATH
+if [[ -n $(command -v snap 2> /dev/null) ]]; then;
+	export PATH=/snap/bin:$PATH
+fi
+
+if [[ -n $(command -v nvidia-smi 2> /dev/null) ]]; then;
+	export PATH=/opt/cuda/bin:$PATH
+	export LD_LIBRARY_PATH=/opt/cuda/lib64:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 fi
 TIMEFMT=$'-----------------------\nTime Info: %J\n\nreal\t%E\nuser\t%U\nsys\t%S\n\n%P cpu %(%Xtext+%Ddata %Mmax)k\n%I inputs+%O outputs (%F major+%R minor) pagefaults %Wswaps %*E total\n-----------------------\n'
-# Add $PATH and $LD_LIBRARY_PATH but without trailing :
-#/opt/cuda/bin:/home/c8763yee/.local/bin${PATH:+:${PATH}}export PATH=${PATH:+${PATH}:}/opt/cuda/bin:/home/c8763yee/.local/bin
-#export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}/opt/cuda/lib64
-
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
@@ -81,7 +81,7 @@ zstyle ':omz:update' mode auto      # update automatically without asking
 # "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
 # or set a custom format using the strftime function format specifications,
 # see 'man strftime' for details.
-# HIST_STAMPS="mm/dd/yyyy"
+HIST_STAMPS="yyyy-mm-dd"
 
 # Would you like to use another custom folder than $ZSH/custom?
 # ZSH_CUSTOM=/path/to/new-custom-folder
