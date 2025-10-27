@@ -130,3 +130,5 @@ source ~/aliasfile
 source ~/functions.sh
 source ~/envfile
 
+
+eval $(thefuck --alias)

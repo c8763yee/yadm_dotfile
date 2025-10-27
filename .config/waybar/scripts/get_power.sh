@@ -10,12 +10,17 @@ else
     gpu_w_formatted="N/A"
 fi
 
-if [[ -n $(which s-tui) ]]; then
-	cpu_power_w=$(sudo s-tui -j | jq '.Power."package-0,0"'| bc)
-	cpu_w_formatted=$(printf "%.1fW" "$cpu_power_w")
-else
-	cpu_w_formatted="N/A"
-fi
+# if [[ -n $(which s-tui) ]]; then
+	# cpu_power_w=$(sudo s-tui -j | jq '.Power."package-0,0"'| bc)
+	# cpu_w_formatted=$(printf "%.1fW" "$cpu_power_w")
+# else
+	# cpu_w_formatted="N/A"
+# fi
+start_j=$(sudo cat /sys/class/powercap/intel-rapl:0/energy_uj)
+sleep 1
+end_j=$(sudo cat /sys/class/powercap/intel-rapl:0/energy_uj)
+cpu_power_w=$(echo "scale=1; ($end_j - $start_j) / 1000000" | bc)
+cpu_w_formatted=$(printf "%.1fW" "$cpu_power_w")
 
 # --- 輸出為 Waybar 需要的 JSON 格式 ---
 # 最終顯示格式: "CPU-W / GPU-W"
