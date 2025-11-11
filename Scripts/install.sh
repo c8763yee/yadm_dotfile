@@ -105,18 +105,11 @@ function setup_zsh() {
 }
 
 function move_config() {
-	mkdir -p $XDG_CONFIG_HOME
-	mkdir -p $XDG_CONFIG_HOME/zsh
-	mkdir -p $XDG_CONFIG_HOME/nvim
-	mkdir -p $XDG_CONFIG_HOME/tmux
-	mkdir -p $XDG_CONFIG_HOME/hypr
-	mkdir -p $XDG_CONFIG_HOME/waybar
-
-	ln -s $HOME/Config/zsh $XDG_CONFIG_HOME/zsh
-	ln -s $HOME/Config/nvim $XDG_CONFIG_HOME/nvim
+	ln -s $HOME/Config/zsh $XDG_CONFIG_HOME
+	ln -s $HOME/Config/nvim $XDG_CONFIG_HOME
 	ln -s $HOME/Config/tmux/.tmux.conf.local $XDG_CONFIG_HOME/tmux/.tmux.conf.local
-	ln -s $HOME/Config/hypr $XDG_CONFIG_HOME/hypr
-	ln -s $HOME/Config/waybar $XDG_CONFIG_HOME/waybar
+	ln -s $HOME/Config/hypr $XDG_CONFIG_HOME
+	ln -s $HOME/Config/waybar $XDG_CONFIG_HOME
 	ln -s $HOME/Config/gdb/.gdbinit $HOME/.gdbinit
 }
 
