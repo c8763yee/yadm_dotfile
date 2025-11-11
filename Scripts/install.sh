@@ -1,4 +1,6 @@
 #!/bin/bash
+set -euxo pipefail
+
 : <<COMMENT
 This script is used to install the required packages for yadm bootstrap
 
@@ -54,13 +56,13 @@ function install_required_packages() {
 	case $distro in
 	"arch")
 		sudo pacman -Syu --noconfirm
-		sudo pacman -S --noconfirm ${PACKAGES[@]}
+		sudo pacman -S --noconfirm --needed ${PACKAGES[@]}
 
 		# Extra packages
 		install_yay
-		sudo pacman -S --noconfirm lua51 rustup cargo rust-analyzer tree-sitter{,-cli} \
+		sudo pacman -S --noconfirm --needed lua51 rustup cargo rust-analyzer tree-sitter{,-cli} \
 			hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland}\
-			gnome-keyring
+			gnome-keyring fd
 		rustup install stable
 		;;
     "msys2")
@@ -114,6 +116,7 @@ function move_config() {
 function main() {
 	install_required_packages
 	install_oh_my_tmux
+	source .zshenv
 	setup_zsh
 	move_config
 }
