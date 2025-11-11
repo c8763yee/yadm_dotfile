@@ -46,8 +46,9 @@ PACKAGES=(
 function install_yay(){
 	sudo pacman -S --noconfirm base-devel
 	git clone https://aur.archlinux.org/yay.git
-	cd yay
+	pushd yay
 	makepkg -si --noconfirm
+	popd
 }
 
 function install_required_packages() {
@@ -103,18 +104,19 @@ function setup_zsh() {
 }
 
 function move_config() {
-	ln -s $HOME/Config/zsh $HOME/.config/zsh
-	ln -s $HOME/Config/nvim $HOME/.config/nvim
+	export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+	ln -s $HOME/Config/zsh $XDG_CONFIG_HOME
+	ln -s $HOME/Config/nvim $XDG_CONFIG_HOME
 	ln -s $HOME/Config/tmux/.tmux.conf $XDG_CONFIG_HOME/tmux/.tmux.conf
+	ln -s $HOME/Config/hypr $XDG_CONFIG_HOME
+	ln -s $HOME/Config/waybar $XDG_CONFIG_HOME
+	
 	ln -s $HOME/Config/gdb/.gdbinit $HOME/.gdbinit
-	ln -s $HOME/Config/hypr $XDG_CONFIG_HOME/hypr
-	ln -s $HOME/Config/waybar $XDG_CONFIG_HOME/waybar
 }
 
 function main() {
 	install_required_packages
 	install_oh_my_tmux
-	source $PWD/.zshenv
 	setup_zsh
 	install_yay
 	move_config
