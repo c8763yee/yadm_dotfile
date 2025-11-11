@@ -58,7 +58,6 @@ function install_required_packages() {
 		sudo pacman -S --noconfirm --needed ${PACKAGES[@]}
 
 		# Extra packages
-		install_yay
 		sudo pacman -S --noconfirm --needed lua51 rustup cargo rust-analyzer tree-sitter{,-cli} \
 			hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland}\
 			gnome-keyring fd
@@ -104,19 +103,20 @@ function setup_zsh() {
 }
 
 function move_config() {
-	ln -s $PWD/Config/zsh $HOME/.config/zsh
-	ln -s $PWD/Config/nvim $HOME/.config/nvim
-	ln -s $PWD/Config/tmux/.tmux.conf $XDG_CONFIG_HOME/tmux/.tmux.conf
-	ln -s $PWD/Config/gdb/.gdbinit $HOME/.gdbinit
-	ln -s $PWD/Config/hypr $XDG_CONFIG_HOME/hypr
-	ln -s $PWD/Config/waybar $XDG_CONFIG_HOME/waybar
+	ln -s $HOME/Config/zsh $HOME/.config/zsh
+	ln -s $HOME/Config/nvim $HOME/.config/nvim
+	ln -s $HOME/Config/tmux/.tmux.conf $XDG_CONFIG_HOME/tmux/.tmux.conf
+	ln -s $HOME/Config/gdb/.gdbinit $HOME/.gdbinit
+	ln -s $HOME/Config/hypr $XDG_CONFIG_HOME/hypr
+	ln -s $HOME/Config/waybar $XDG_CONFIG_HOME/waybar
 }
 
 function main() {
 	install_required_packages
 	install_oh_my_tmux
-	source .zshenv
+	source $PWD/.zshenv
 	setup_zsh
+	install_yay
 	move_config
 }
 
