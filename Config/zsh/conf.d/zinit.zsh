@@ -19,7 +19,20 @@ zinit light zdharma-continuum/fast-syntax-highlighting
 
 zinit ice depth=1; zinit light romkatv/powerlevel10k
 
-zinit snippet OMZ::lib/completion.zsh
-zinit snippet OMZ::lib/history.zsh
-zinit snippet OMZ::lib/key-bindings.zsh
-zinit snippet OMZ::lib/theme-and-appearance.zsh
+# oh-my-zsh snippets
+zinit snippet OMZL::completion.zsh
+zinit snippet OMZL::history.zsh
+zinit snippet OMZL::key-bindings.zsh
+zinit snippet OMZL::theme-and-appearance.zsh
+zinit snippet OMZP::/git/git.plugin.zsh
+
+plugins=(git vim-interaction pipenv pip aliases docker docker-compose poetry git-commit git-auto-fetch ssh sudo github git-hubflow git-lfs alias-finder uv colored-man-pages gh history postgres ssh-agent supervisor tmux themes vscode wakeonlan)
+for plugin in "${plugins[@]}"; do
+    # Turbo mode: defer sourcing until after prompt draw for faster startup.
+    zinit ice wait"1" lucid reset
+    zinit snippet "OMZP::${plugin}"
+done
+
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
+bindkey ',' autosuggest-accept
