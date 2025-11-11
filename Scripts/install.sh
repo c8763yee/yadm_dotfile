@@ -91,9 +91,10 @@ function install_oh_my_tmux(){
 		return
 	fi
 	echo "Installing Oh My Tmux..."
+	rm -rf .tmux
 	git clone https://github.com/gpakosz/.tmux.git
 	mkdir -p $XDG_CONFIG_HOME/tmux
-	ln -s .tmux/.tmux.conf $XDG_CONFIG_HOME/tmux/.tmux.conf
+	ln -s $PWD/.tmux/.tmux.conf $XDG_CONFIG_HOME/tmux/.tmux.conf
 }
 
 function setup_zsh() {
@@ -104,13 +105,18 @@ function setup_zsh() {
 }
 
 function move_config() {
-	export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-	ln -s $HOME/Config/zsh $XDG_CONFIG_HOME
-	ln -s $HOME/Config/nvim $XDG_CONFIG_HOME
-	ln -s $HOME/Config/tmux/.tmux.conf $XDG_CONFIG_HOME/tmux/.tmux.conf
-	ln -s $HOME/Config/hypr $XDG_CONFIG_HOME
-	ln -s $HOME/Config/waybar $XDG_CONFIG_HOME
-	
+	mkdir -p $XDG_CONFIG_HOME
+	mkdir -p $XDG_CONFIG_HOME/zsh
+	mkdir -p $XDG_CONFIG_HOME/nvim
+	mkdir -p $XDG_CONFIG_HOME/tmux
+	mkdir -p $XDG_CONFIG_HOME/hypr
+	mkdir -p $XDG_CONFIG_HOME/waybar
+
+	ln -s $HOME/Config/zsh $XDG_CONFIG_HOME/zsh
+	ln -s $HOME/Config/nvim $XDG_CONFIG_HOME/nvim
+	ln -s $HOME/Config/tmux/.tmux.conf.local $XDG_CONFIG_HOME/tmux/.tmux.conf.local
+	ln -s $HOME/Config/hypr $XDG_CONFIG_HOME/hypr
+	ln -s $HOME/Config/waybar $XDG_CONFIG_HOME/waybar
 	ln -s $HOME/Config/gdb/.gdbinit $HOME/.gdbinit
 }
 
