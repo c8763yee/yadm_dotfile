@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euxo pipefail
 
 : <<COMMENT
 This script is used to install the required packages for yadm bootstrap
@@ -105,12 +104,12 @@ function setup_zsh() {
 }
 
 function move_config() {
-	ln -s Config/zsh $HOME/.config/zsh
-	ln -s Config/nvim $HOME/.config/nvim
-	ln -s Config/tmux/.tmux.conf $XDG_CONFIG_HOME/tmux/.tmux.conf
-	ln -s Config/gdb/.gdbinit $HOME/.gdbinit
-	ln -s Config/hypr $XDG_CONFIG_HOME/hypr
-	ln -s Config/waybar $XDG_CONFIG_HOME/waybar
+	ln -s $PWD/Config/zsh $HOME/.config/zsh
+	ln -s $PWD/Config/nvim $HOME/.config/nvim
+	ln -s $PWD/Config/tmux/.tmux.conf $XDG_CONFIG_HOME/tmux/.tmux.conf
+	ln -s $PWD/Config/gdb/.gdbinit $HOME/.gdbinit
+	ln -s $PWD/Config/hypr $XDG_CONFIG_HOME/hypr
+	ln -s $PWD/Config/waybar $XDG_CONFIG_HOME/waybar
 }
 
 function main() {
