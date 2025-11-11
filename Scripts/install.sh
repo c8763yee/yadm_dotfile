@@ -31,7 +31,6 @@ PACKAGES=(
 	"wget"
 	"tmux"
 	"fzf"
-	"find"
 	"ripgrep"
 	"clang"
 	"gcc"
