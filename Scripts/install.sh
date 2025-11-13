@@ -86,9 +86,13 @@ function install_required_packages() {
 
 function install_oh_my_tmux(){
 	# install in $XDG_CONFIG_HOME/tmux
-	mkdir -p $XDG_CONFIG_HOME/tmux
-	ln -s $BASE_DIR/Config/tmux.conf $XDG_CONFIG_HOME/tmux/.tmux.conf
-	ln -s $BASE_DIR/Config/tmux/.tmux.conf.local $XDG_CONFIG_HOME/tmux/.tmux.conf.local
+	ln -sf $BASE_DIR/Config/tmux/tmux.conf $HOME/.tmux.conf
+	ln -sf $BASE_DIR/Config/tmux/.tmux.conf.local $HOME/.tmux.conf.local
+
+	if [[ ! -d ~/.tmux/plugins/tpm ]]; then
+		mkdir -p ~/.tmux/plugins
+		git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+	fi
 }
 
 function setup_zsh() {
@@ -99,13 +103,13 @@ function setup_zsh() {
 }
 
 function move_config() {
-	ln -s $BASE_DIR/Config/zsh $XDG_CONFIG_HOME
-	ln -s $BASE_DIR/Config/nvim $XDG_CONFIG_HOME
-	ln -s $BASE_DIR/Config/hypr $XDG_CONFIG_HOME
-	ln -s $BASE_DIR/Config/waybar $XDG_CONFIG_HOME
-	ln -s $BASE_DIR/Config/gdb/.gdbinit $BASE_DIR/.gdbinit
+	ln -sf $BASE_DIR/Config/zsh $XDG_CONFIG_HOME
+	ln -sf $BASE_DIR/Config/nvim $XDG_CONFIG_HOME
+	ln -sf $BASE_DIR/Config/hypr $XDG_CONFIG_HOME
+	ln -sf $BASE_DIR/Config/waybar $XDG_CONFIG_HOME
+	ln -sf $BASE_DIR/Config/gdb/.gdbinit $BASE_DIR/.gdbinit
 	
-	ln -s $BASE_DIR/Config/git/.gitconfig ~/.gitconfig
+	ln -sf $BASE_DIR/Config/git/.gitconfig ~/.gitconfig
 }
 
 function check_dotfile() {

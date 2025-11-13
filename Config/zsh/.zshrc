@@ -42,9 +42,17 @@ Wswaps %*E total
 EOF
 )
 
+export EDITOR=vim
+if [[ -n $(command -v nvim) ]]; then
+	export EDITOR=nvim
+elif [[ -n $(command -v nano) ]]; then
+	export EDITOR=nano
+fi
+
 # To customize prompt, run `p10k configure` or edit ~/.config/zsh/.p10k.zsh.
 [[ ! -f ~/.config/zsh/.p10k.zsh ]] || source ~/.config/zsh/.p10k.zsh
 
 if [[ $- =~ i ]] && [[ -z "$TMUX" ]] && [[ -n "$SSH_TTY" ]]; then
   tmux attach-session -t ssh_tmux || tmux new-session -s ssh_tmux
 fi
+
