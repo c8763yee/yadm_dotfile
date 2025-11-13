@@ -35,4 +35,5 @@ done
 
 bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
+<<<<<<< Updated upstream
 bindkey ',' autosuggest-accept
