@@ -86,15 +86,9 @@ function install_required_packages() {
 
 function install_oh_my_tmux(){
 	# install in $XDG_CONFIG_HOME/tmux
-	if [[ -f $XDG_CONFIG_HOME/tmux/.tmux.conf ]]; then
-		echo "Oh My Tmux is already installed."
-		return
-	fi
-	echo "Installing Oh My Tmux..."
-	rm -rf .tmux
-	git clone https://github.com/gpakosz/.tmux.git
 	mkdir -p $XDG_CONFIG_HOME/tmux
-	ln -s $PWD/.tmux/.tmux.conf $XDG_CONFIG_HOME/tmux/.tmux.conf
+	ln -s $BASE_DIR/Config/tmux.conf $XDG_CONFIG_HOME/tmux/.tmux.conf
+	ln -s $BASE_DIR/Config/tmux/.tmux.conf.local $XDG_CONFIG_HOME/tmux/.tmux.conf.local
 }
 
 function setup_zsh() {
@@ -105,15 +99,24 @@ function setup_zsh() {
 }
 
 function move_config() {
-	ln -s $HOME/Config/zsh $XDG_CONFIG_HOME
-	ln -s $HOME/Config/nvim $XDG_CONFIG_HOME
-	ln -s $HOME/Config/tmux/.tmux.conf.local $XDG_CONFIG_HOME/tmux/.tmux.conf.local
-	ln -s $HOME/Config/hypr $XDG_CONFIG_HOME
-	ln -s $HOME/Config/waybar $XDG_CONFIG_HOME
-	ln -s $HOME/Config/gdb/.gdbinit $HOME/.gdbinit
+	ln -s $BASE_DIR/Config/zsh $XDG_CONFIG_HOME
+	ln -s $BASE_DIR/Config/nvim $XDG_CONFIG_HOME
+	ln -s $BASE_DIR/Config/hypr $XDG_CONFIG_HOME
+	ln -s $BASE_DIR/Config/waybar $XDG_CONFIG_HOME
+	ln -s $BASE_DIR/Config/gdb/.gdbinit $BASE_DIR/.gdbinit
+	
+	ln -s $BASE_DIR/Config/git/.gitconfig ~/.gitconfig
 }
 
+function check_dotfile() {
+	BASE_DIR=${1:-$HOME} # $HOME is for yadm bootstrap
+	if [[ ! -d $BASE_DIR/Config ]]; then
+		git clone https://github.com/c8763yee/yadm_dotfile .dotfile
+		BASE_DIR=${PWD}/.dotfile
+	fi
+}
 function main() {
+	check_dotfile
 	install_required_packages
 	install_oh_my_tmux
 	setup_zsh
