@@ -47,6 +47,7 @@ function install_yay(){
 	sudo pacman -S --noconfirm base-devel
 	git clone https://aur.archlinux.org/yay.git
 	pushd yay
+	git pull
 	makepkg -si --noconfirm
 	popd
 }
@@ -107,6 +108,7 @@ function move_config() {
 	ln -sf $BASE_DIR/Config/nvim $XDG_CONFIG_HOME
 	ln -sf $BASE_DIR/Config/hypr $XDG_CONFIG_HOME
 	ln -sf $BASE_DIR/Config/waybar $XDG_CONFIG_HOME
+	ln -sf $BASE_DIR/Config/kitty $XDG_CONFIG_HOME
 	ln -sf $BASE_DIR/Config/gdb/.gdbinit $BASE_DIR/.gdbinit
 	
 	ln -sf $BASE_DIR/Config/git/.gitconfig ~/.gitconfig

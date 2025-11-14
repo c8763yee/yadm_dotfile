@@ -18,6 +18,12 @@ local servers = {
   "perlnavigator",
   -- "typos_lsp",
   -- "tsserver",
+  
+  -- python
+  "python-lsp-server",
+  "ruff",
+  "uv"
+  
 }
 
 require("mason").setup()

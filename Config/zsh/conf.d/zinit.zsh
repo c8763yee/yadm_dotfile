@@ -31,6 +31,7 @@ zinit snippet OMZL::history.zsh
 zinit snippet OMZL::key-bindings.zsh
 zinit snippet OMZL::theme-and-appearance.zsh
 zinit snippet OMZL::directories.zsh
+
 plugins=(git vim-interaction pipenv pip aliases docker docker-compose poetry git-commit git-auto-fetch ssh sudo github git-hubflow git-lfs alias-finder uv colored-man-pages gh history postgres ssh-agent supervisor tmux themes vscode wakeonlan)
 for plugin in "${plugins[@]}"; do
     # Turbo mode: defer sourcing until after prompt draw for faster startup.
@@ -40,3 +41,5 @@ done
 
 bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
+
+zinit load djui/alias-tips
