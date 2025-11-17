@@ -16,14 +16,20 @@ local servers = {
   "vimls",
   "yamlls",
   "perlnavigator",
-  -- "typos_lsp",
+  "typos_lsp",
   -- "tsserver",
   
   -- python
   "python-lsp-server",
   "ruff",
-  "uv"
-  
+  "uv",
+
+  -- C/CPP related
+  "clangd",
+  "clang-format",
+  "cmake-language-server",
+  "asm-lsp",
+  "asmfmt"
 }
 
 require("mason").setup()

@@ -22,7 +22,6 @@ require 'nvim-treesitter'.install {
   -- 'comment' -- 更好的高亮 TODO XXX NOTE FIXME ，但是其让 url 的高亮过于明显
   "rst",
   "llvm",
-  "gitcommit",
   "gitignore",
   "git_rebase",
   "html",
