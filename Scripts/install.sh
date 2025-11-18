@@ -60,7 +60,7 @@ function install_required_packages() {
 
 		# Extra packages
 		sudo pacman -S --noconfirm --needed lua51 rustup cargo rust-analyzer tree-sitter{,-cli} \
-			hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland} gnome-keyring fd
+			hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland} gnome-keyring fd fastfetch
 		rustup install stable
 		;;
 	"msys2")
@@ -107,8 +107,9 @@ function move_config() {
 	ln -sf "$BASE_DIR"/Config/hypr "$XDG_CONFIG_HOME"
 	ln -sf "$BASE_DIR"/Config/waybar "$XDG_CONFIG_HOME"
 	ln -sf "$BASE_DIR"/Config/kitty "$XDG_CONFIG_HOME"
-	ln -sf "$BASE_DIR"/Config/gdb/.gdbinit "$BASE_DIR"/.gdbinit
+	ln -sf "$BASE_DIR"/Config/fastfetch "$XDG_CONFIG_HOME"
 
+	ln -sf "$BASE_DIR"/Config/gdb/.gdbinit "$BASE_DIR"/.gdbinit
 	ln -sf "$BASE_DIR"/Config/git/.gitconfig ~/.gitconfig
 }
 

@@ -21,4 +21,3 @@ alias y='yadm'
 alias ssu='sudo supervisorctl'
 alias ssr='sudo systemctl'
 alias sru='systemctl --user'
-alias neofetch=fastfetch
