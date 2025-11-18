@@ -116,8 +116,8 @@ function move_config() {
 function check_dotfile() {
 	BASE_DIR=${1:-$HOME} # $HOME is for yadm bootstrap
 	if [[ ! -d $BASE_DIR/Config ]]; then
-		git clone https://github.com/c8763yee/yadm_dotfile .dotfile
-		BASE_DIR=${PWD}/.dotfile
+		git clone https://github.com/c8763yee/yadm_dotfile "$HOME".dotfile
+		BASE_DIR=$HOME/.dotfile
 		git -C "$BASE_DIR" submodule update --init
 	fi
 	yadm submodule update --init
@@ -125,7 +125,7 @@ function check_dotfile() {
 
 function setup_claude_code() {
 	curl -fsSL https://claude.ai/install.sh | bash
-	cp -r /home/c8763yee/Config/prompts/prompts/claude/agents /home/c8763yee/Config/prompts/prompts/claude/CLAUDE.md /home/c8763yee/Config/prompts/prompts/claude/commands ~/.claude
+	cp -r $BASE_DIR/Config/prompts/prompts/claude/agents $BASE_DIR/Config/prompts/prompts/claude/CLAUDE.md $BASE_DIR/Config/prompts/prompts/claude/commands ~/.claude
 }
 
 function main() {
