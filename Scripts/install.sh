@@ -43,13 +43,12 @@ PACKAGES=(
 	"pre-commit"
 )
 
-function install_yay(){
+function install_yay() {
 	sudo pacman -S --noconfirm base-devel
-	git clone https://aur.archlinux.org/yay.git
-	pushd yay
-	git pull
+	git clone https://aur.archlinux.org/yay.git /tmp/yay
+	pushd /tmp/yay || exit
 	makepkg -si --noconfirm
-	popd
+	popd || exit
 }
 
 function install_required_packages() {
@@ -57,26 +56,25 @@ function install_required_packages() {
 	case $distro in
 	"arch")
 		sudo pacman -Syu --noconfirm
-		sudo pacman -S --noconfirm --needed ${PACKAGES[@]}
+		sudo pacman -S --noconfirm --needed "${PACKAGES[@]}"
 
 		# Extra packages
 		sudo pacman -S --noconfirm --needed lua51 rustup cargo rust-analyzer tree-sitter{,-cli} \
-			hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland}\
-			gnome-keyring fd
+			hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland} gnome-keyring fd
 		rustup install stable
 		;;
-    "msys2")
+	"msys2")
 		pacman -Syu --noconfirm
-		pacman -S --noconfirm ${PACKAGES[@]}
-        ;;
+		pacman -S --noconfirm "${PACKAGES[@]}"
+		;;
 	"debian" | "ubuntu")
 		sudo apt update
-		sudo apt install -y ${PACKAGES[@]}
+		sudo apt install -y "${PACKAGES[@]}"
 		sudo apt install -y fd-find
 		;;
 	"fedora")
 		sudo dnf update -y
-		sudo dnf install -y ${PACKAGES[@]}
+		sudo dnf install -y "${PACKAGES[@]}"
 		;;
 	*)
 		echo "Unsupported distro"
@@ -85,10 +83,10 @@ function install_required_packages() {
 	esac
 }
 
-function install_oh_my_tmux(){
+function install_oh_my_tmux() {
 	# install in $XDG_CONFIG_HOME/tmux
-	ln -sf $BASE_DIR/Config/tmux/tmux.conf $HOME/.tmux.conf
-	ln -sf $BASE_DIR/Config/tmux/.tmux.conf.local $HOME/.tmux.conf.local
+	ln -sf "$BASE_DIR"/Config/tmux/tmux.conf "$HOME"/.tmux.conf
+	ln -sf "$BASE_DIR"/Config/tmux/.tmux.conf.local "$HOME"/.tmux.conf.local
 
 	if [[ ! -d ~/.tmux/plugins/tpm ]]; then
 		mkdir -p ~/.tmux/plugins
@@ -99,19 +97,19 @@ function install_oh_my_tmux(){
 function setup_zsh() {
 	# Change default shell to zsh
 	if [[ $SHELL != *"zsh"* ]]; then
-		chsh -s $(which zsh)
+		chsh -s "$(which zsh)"
 	fi
 }
 
 function move_config() {
-	ln -sf $BASE_DIR/Config/zsh $XDG_CONFIG_HOME
-	ln -sf $BASE_DIR/Config/nvim $XDG_CONFIG_HOME
-	ln -sf $BASE_DIR/Config/hypr $XDG_CONFIG_HOME
-	ln -sf $BASE_DIR/Config/waybar $XDG_CONFIG_HOME
-	ln -sf $BASE_DIR/Config/kitty $XDG_CONFIG_HOME
-	ln -sf $BASE_DIR/Config/gdb/.gdbinit $BASE_DIR/.gdbinit
-	
-	ln -sf $BASE_DIR/Config/git/.gitconfig ~/.gitconfig
+	ln -sf "$BASE_DIR"/Config/zsh "$XDG_CONFIG_HOME"
+	ln -sf "$BASE_DIR"/Config/nvim "$XDG_CONFIG_HOME"
+	ln -sf "$BASE_DIR"/Config/hypr "$XDG_CONFIG_HOME"
+	ln -sf "$BASE_DIR"/Config/waybar "$XDG_CONFIG_HOME"
+	ln -sf "$BASE_DIR"/Config/kitty "$XDG_CONFIG_HOME"
+	ln -sf "$BASE_DIR"/Config/gdb/.gdbinit "$BASE_DIR"/.gdbinit
+
+	ln -sf "$BASE_DIR"/Config/git/.gitconfig ~/.gitconfig
 }
 
 function check_dotfile() {
@@ -119,10 +117,19 @@ function check_dotfile() {
 	if [[ ! -d $BASE_DIR/Config ]]; then
 		git clone https://github.com/c8763yee/yadm_dotfile .dotfile
 		BASE_DIR=${PWD}/.dotfile
+		git -C "$BASE_DIR" submodule update --init
 	fi
+	yadm submodule update --init
 }
+
+function setup_claude_code() {
+	curl -fsSL https://claude.ai/install.sh | bash
+	cp -r /home/c8763yee/Config/prompts/prompts/claude/agents /home/c8763yee/Config/prompts/prompts/claude/CLAUDE.md /home/c8763yee/Config/prompts/prompts/claude/commands ~/.claude
+}
+
 function main() {
 	check_dotfile
+	setup_claude_code
 	install_required_packages
 	install_oh_my_tmux
 	setup_zsh
