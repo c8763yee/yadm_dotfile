@@ -10,85 +10,151 @@ set -e
 # Shows usage information and exits.
 ##
 usage() {
-    printf "Usage: %s [<version>] [download|git]\n" "$0"
-    printf "  <version>     : Kernel version (e.g., 6.5.3). Defaults to the running kernel.\n"
-    printf "  [download|git]: Method to use. 'download' (default) gets the tarball, 'git' clones the tag.\n"
+    printf "Usage: %s --method download <version>\n" "$0"
+    printf "       %s --method git\n" "$0"
+    printf "\n"
+    printf "Options:\n"
+    printf "  --method download <version>  : Download and extract specific kernel version tarball\n"
+    printf "  --method git                 : Clone or pull the mainline kernel git repository\n"
+    printf "\n"
+    printf "Examples:\n"
+    printf "  %s --method download 6.5.3\n" "$0"
+    printf "  %s --method git\n" "$0"
     exit 1
 }
 
 # --- Argument Parsing ---
 
-# Default to current kernel version if $1 is not set.
-# The 'cut' command strips suffixes like '-arch1-1' or '-generic'.
-VERSION="${1:-$(uname -r | cut -d'-' -f1)}"
+METHOD=""
+VERSION=""
 
-# Default to 'download' method if $2 is not set, and convert to lowercase.
-METHOD=$(echo "${2:-download}" | tr '[:upper:]' '[:lower:]')
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --method)
+            if [[ -n "$2" ]] && [[ "$2" != -* ]]; then
+                METHOD=$(echo "$2" | tr '[:upper:]' '[:lower:]')
+                shift 2
+            else
+                printf "❌ Error: --method requires an argument (git|download)\n\n"
+                usage
+            fi
+            ;;
+        -*)
+            printf "❌ Error: Unknown option: %s\n\n" "$1"
+            usage
+            ;;
+        *)
+            VERSION="$1"
+            shift
+            ;;
+    esac
+done
+
+# Validate method
+if [[ -z "$METHOD" ]]; then
+    printf "❌ Error: --method is required\n\n"
+    usage
+fi
+
+if [[ "$METHOD" != "download" ]] && [[ "$METHOD" != "git" ]]; then
+    printf "❌ Error: Invalid method '%s'. Use 'download' or 'git'\n\n" "$METHOD"
+    usage
+fi
+
+# Validate version for download method
+if [[ "$METHOD" == "download" ]] && [[ -z "$VERSION" ]]; then
+    printf "❌ Error: Version is required for download method\n\n"
+    usage
+fi
+
+# Git method doesn't need version
+if [[ "$METHOD" == "git" ]] && [[ -n "$VERSION" ]]; then
+    printf "⚠️  Warning: Version parameter ignored for git method\n\n"
+fi
 
 # --- Main Logic ---
 
-printf "Kernel Version: %s\n" "$VERSION"
-printf "Method: %s\n\n" "$METHOD"
+mkdir -p "$HOME/linux-kernel/"
 
-# Get the major version number (e.g., '6' from '6.5.3')
-MAJOR_VERSION=$(echo "$VERSION" | cut -d'.' -f1)
-
-mkdir -p $HOME/linux-kernel/
 case "$METHOD" in
     download)
         # --- Download Method ---
+        printf "Kernel Version: %s\n" "$VERSION"
+        printf "Method: download\n\n"
+
         if ! command -v wget &> /dev/null; then
             printf "❌ Error: 'wget' is required for the download method. Please install it.\n"
             exit 1
         fi
 
-        URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR_VERSION}.x/linux-${VERSION}.tar.xz"
-        FILENAME="$HOME/linux-kernel/linux-${VERSION}.tar.xz"
+        # Get the major version number (e.g., '6' from '6.5.3')
+        MAJOR_VERSION=$(echo "$VERSION" | cut -d'.' -f1)
 
-        printf "Downloading source tarball from:\n%s\n" "$URL"
-        wget -O $FILENAME -c "$URL" # -c allows resuming a partial download
+        URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR_VERSION}.x/linux-${VERSION}.tar.xz"
+        TARBALL="$HOME/linux-kernel/linux-${VERSION}.tar.xz"
+        EXTRACT_DIR="$HOME/linux-kernel/linux-${VERSION}"
+
+        # Check if already extracted
+        if [ -d "$EXTRACT_DIR" ]; then
+            printf "⚠️  Directory '%s' already exists. Skipping download.\n" "$EXTRACT_DIR"
+            exit 0
+        fi
+
+        printf "Downloading source tarball from:\n%s\n\n" "$URL"
+        wget -O "$TARBALL" -c "$URL"
+
+        if [ $? -ne 0 ]; then
+            printf "\n❌ Download failed. Please check the version number and your network connection.\n"
+            exit 1
+        fi
+
+        printf "\n✅ Download complete. Extracting...\n"
+        tar -xf "$TARBALL" -C "$HOME/linux-kernel/"
 
         if [ $? -eq 0 ]; then
-            printf "\n✅ Success! File saved as %s.\n" "$FILENAME"
-            printf "   To extract, run: tar -xf %s\n" "$FILENAME"
+            printf "✅ Extraction complete. Removing tarball...\n"
+            rm "$TARBALL"
+            printf "✅ Success! Kernel source extracted to: %s\n" "$EXTRACT_DIR"
         else
-            printf "\n❌ Download failed. Please check the version number and your network connection.\n"
+            printf "❌ Extraction failed.\n"
             exit 1
         fi
         ;;
 
     git)
-        # --- Git Clone Method ---
+        # --- Git Clone/Pull Method ---
+        printf "Method: git\n\n"
+
         if ! command -v git &> /dev/null; then
             printf "❌ Error: 'git' is required for the git method. Please install it.\n"
             exit 1
         fi
 
         GIT_URL="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
-        TAG="v${VERSION}"
-        DIR_NAME="$HOME/linux-kernel/linux-${VERSION}"
+        DIR_NAME="$HOME/linux-kernel/linux-git"
 
         if [ -d "$DIR_NAME" ]; then
-            printf "⚠️  Directory '%s' already exists. Skipping clone.\n" "$DIR_NAME"
-            exit 0
-        fi
+            printf "📁 Directory '%s' exists. Pulling latest changes...\n" "$DIR_NAME"
+            cd "$DIR_NAME"
+            git pull
 
-        printf "Cloning tag '%s' into directory '%s'...\n" "$TAG" "$DIR_NAME"
-        # A shallow clone is much faster and smaller as it omits the full commit history.
-        git clone --depth 1 --branch "$TAG" "$GIT_URL" "$DIR_NAME"
-
-        if [ $? -eq 0 ]; then
-            printf "\n✅ Success! Kernel source cloned into the '%s' directory.\n" "$DIR_NAME"
+            if [ $? -eq 0 ]; then
+                printf "\n✅ Success! Repository updated.\n"
+            else
+                printf "\n❌ Git pull failed.\n"
+                exit 1
+            fi
         else
-            printf "\n❌ Git clone failed. Please verify that the tag '%s' exists.\n" "$TAG"
-            exit 1
-        fi
-        ;;
+            printf "Cloning mainline kernel repository into '%s'...\n" "$DIR_NAME"
+            git clone "$GIT_URL" "$DIR_NAME"
 
-    *)
-        # --- Invalid Method ---
-        printf "❌ Error: Invalid method specified: '%s'.\n\n" "$METHOD"
-        usage
+            if [ $? -eq 0 ]; then
+                printf "\n✅ Success! Kernel source cloned into: %s\n" "$DIR_NAME"
+            else
+                printf "\n❌ Git clone failed.\n"
+                exit 1
+            fi
+        fi
         ;;
 esac
 

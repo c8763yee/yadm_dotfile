@@ -25,24 +25,27 @@ Plugin
 COMMENT
 
 PACKAGES=(
-	"zsh"
-	"git"
-	"curl"
-	"neovim"
-	"wget"
-	"tmux"
-	"fzf"
-	"ripgrep"
-	"clang"
-	"gcc"
-	"nodejs"
-	"npm"
-	"luarocks"
-	"yarn"
-	"s-tui"
-	"pre-commit"
+	zsh
+	git
+	curl
+	neovim
+	wget
+	tmux
+	fzf
+	ripgrep
+	clang
+	gcc
+	nodejs
+	npm
+	luarocks
+	yarn
+	s-tui
+	pre-commit
 )
 
+
+
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 function install_yay() {
 	sudo pacman -S --noconfirm base-devel
 	git clone https://aur.archlinux.org/yay.git /tmp/yay
@@ -52,32 +55,32 @@ function install_yay() {
 }
 
 function install_required_packages() {
-	distro=$(cat /etc/os-release | grep -w "ID" | cut -d "=" -f 2 | tr -d '"')
+	distro=$(cat /etc/os-release | grep -w ID | cut -d = -f 2 | tr -d '')
 	case $distro in
-	"arch")
+	arch)
 		sudo pacman -Syu --noconfirm
-		sudo pacman -S --noconfirm --needed "${PACKAGES[@]}"
+		sudo pacman -S --noconfirm --needed ${PACKAGES[@]}
 
 		# Extra packages
 		sudo pacman -S --noconfirm --needed lua51 rustup cargo rust-analyzer tree-sitter{,-cli} \
 			hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland} gnome-keyring fd fastfetch
 		rustup install stable
 		;;
-	"msys2")
+	msys2)
 		pacman -Syu --noconfirm
-		pacman -S --noconfirm "${PACKAGES[@]}"
+		pacman -S --noconfirm ${PACKAGES[@]}
 		;;
-	"debian" | "ubuntu")
+	debian | ubuntu)
 		sudo apt update
-		sudo apt install -y "${PACKAGES[@]}"
+		sudo apt install -y ${PACKAGES[@]}
 		sudo apt install -y fd-find
 		;;
-	"fedora")
+	fedora)
 		sudo dnf update -y
-		sudo dnf install -y "${PACKAGES[@]}"
+		sudo dnf install -y ${PACKAGES[@]}
 		;;
 	*)
-		echo "Unsupported distro"
+		echo Unsupported distro
 		exit 1
 		;;
 	esac
@@ -85,47 +88,47 @@ function install_required_packages() {
 
 function install_oh_my_tmux() {
 	# install in $XDG_CONFIG_HOME/tmux
-	ln -sf "$BASE_DIR"/Config/tmux/tmux.conf "$HOME"/.tmux.conf
-	ln -sf "$BASE_DIR"/Config/tmux/.tmux.conf.local "$HOME"/.tmux.conf.local
+	ln -sf $BASE_DIR/Config/tmux/tmux.conf $HOME/.tmux.conf
+	ln -sf $BASE_DIR/Config/tmux/.tmux.conf.local $HOME/.tmux.conf.local
 
-	if [[ ! -d ~/.tmux/plugins/tpm ]]; then
-		mkdir -p ~/.tmux/plugins
-		git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+	if [[ ! -d $HOME/.tmux/plugins/tpm ]]; then
+		mkdir -p $HOME/.tmux/plugins
+		git clone https://github.com/tmux-plugins/tpm $HOME/.tmux/plugins/tpm
 	fi
 }
 
 function setup_zsh() {
 	# Change default shell to zsh
-	if [[ $SHELL != *"zsh"* ]]; then
-		chsh -s "$(which zsh)"
+	if [[ $SHELL != *zsh* ]]; then
+		chsh -s $(which zsh)
 	fi
 }
 
 function move_config() {
-	ln -sf "$BASE_DIR"/Config/zsh "$XDG_CONFIG_HOME"
-	ln -sf "$BASE_DIR"/Config/nvim "$XDG_CONFIG_HOME"
-	ln -sf "$BASE_DIR"/Config/hypr "$XDG_CONFIG_HOME"
-	ln -sf "$BASE_DIR"/Config/waybar "$XDG_CONFIG_HOME"
-	ln -sf "$BASE_DIR"/Config/kitty "$XDG_CONFIG_HOME"
-	ln -sf "$BASE_DIR"/Config/fastfetch "$XDG_CONFIG_HOME"
+	ln -sf $BASE_DIR/Config/zsh $XDG_CONFIG_HOME
+	ln -sf $BASE_DIR/Config/nvim $XDG_CONFIG_HOME
+	ln -sf $BASE_DIR/Config/hypr $XDG_CONFIG_HOME
+	ln -sf $BASE_DIR/Config/waybar $XDG_CONFIG_HOME
+	ln -sf $BASE_DIR/Config/kitty $XDG_CONFIG_HOME
+	ln -sf $BASE_DIR/Config/fastfetch $XDG_CONFIG_HOME
 
-	ln -sf "$BASE_DIR"/Config/gdb/.gdbinit "$BASE_DIR"/.gdbinit
-	ln -sf "$BASE_DIR"/Config/git/.gitconfig ~/.gitconfig
+	ln -sf $BASE_DIR/Config/gdb/.gdbinit $BASE_DIR/.gdbinit
+	ln -sf $BASE_DIR/Config/git/.gitconfig $HOME/.gitconfig
 }
 
 function check_dotfile() {
 	BASE_DIR=${1:-$HOME} # $HOME is for yadm bootstrap
 	if [[ ! -d $BASE_DIR/Config ]]; then
-		git clone https://github.com/c8763yee/yadm_dotfile "$HOME".dotfile
 		BASE_DIR=$HOME/.dotfile
-		git -C "$BASE_DIR" submodule update --init
+		git clone https://github.com/c8763yee/yadm_dotfile $BASE_DIR
+		git -C $BASE_DIR submodule update --init
 	fi
 	yadm submodule update --init
 }
 
 function setup_claude_code() {
 	curl -fsSL https://claude.ai/install.sh | bash
-	cp -r $BASE_DIR/Config/prompts/prompts/claude/agents $BASE_DIR/Config/prompts/prompts/claude/CLAUDE.md $BASE_DIR/Config/prompts/prompts/claude/commands ~/.claude
+	cp -r $BASE_DIR/Config/prompts/prompts/claude/agents $BASE_DIR/Config/prompts/prompts/claude/CLAUDE.md $BASE_DIR/Config/prompts/prompts/claude/commands $HOME/.claude
 }
 
 function main() {
@@ -139,4 +142,4 @@ function main() {
 }
 
 main
-echo "Done"
+echo Done
