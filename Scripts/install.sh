@@ -1,5 +1,4 @@
 #!/bin/bash
-
 : <<COMMENT
 This script is used to install the required packages for yadm bootstrap
 
@@ -43,8 +42,6 @@ PACKAGES=(
 	pre-commit
 )
 
-
-
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 function install_yay() {
 	sudo pacman -S --noconfirm base-devel
@@ -61,10 +58,6 @@ function install_required_packages() {
 		sudo pacman -Syu --noconfirm
 		sudo pacman -S --noconfirm --needed ${PACKAGES[@]}
 
-		# Extra packages
-		sudo pacman -S --noconfirm --needed lua51 rustup cargo rust-analyzer tree-sitter{,-cli} \
-			hyprland hyprpaper swaylock waybar nwg-{look,displays,dock-hyprland} gnome-keyring fd fastfetch
-		rustup install stable
 		;;
 	msys2)
 		pacman -Syu --noconfirm
@@ -86,6 +79,27 @@ function install_required_packages() {
 	esac
 }
 
+function install_extra_package() {
+	case $distro in
+	arch)
+		sudo pacman -S --noconfirm --needed lua51 rustup cargo rust-analyzer tree-sitter{,-cli} \
+			hyprland swaylock waybar nwg-{look,displays,dock-hyprland} gnome-keyring fd fastfetch
+		rustup install stable
+		install_yay
+
+		yay -S --noconfirm --needed awww-git
+		;;
+	msys2) ;;
+	debian | ubuntu)
+		sudo apt install -y fd-find
+		;;
+	fedora) ;;
+	*)
+		echo Unsupported distro
+		exit 1
+		;;
+	esac
+}
 function install_oh_my_tmux() {
 	# install in $XDG_CONFIG_HOME/tmux
 	ln -sf $BASE_DIR/Config/tmux/tmux.conf $HOME/.tmux.conf
@@ -111,6 +125,7 @@ function move_config() {
 	ln -sf $BASE_DIR/Config/waybar $XDG_CONFIG_HOME
 	ln -sf $BASE_DIR/Config/kitty $XDG_CONFIG_HOME
 	ln -sf $BASE_DIR/Config/fastfetch $XDG_CONFIG_HOME
+	ln -sf $BASE_DIR/Config/awww $XDG_CONFIG_HOME
 
 	ln -sf $BASE_DIR/Config/gdb/.gdbinit $BASE_DIR/.gdbinit
 	ln -sf $BASE_DIR/Config/git/.gitconfig $HOME/.gitconfig
@@ -137,7 +152,6 @@ function main() {
 	install_required_packages
 	install_oh_my_tmux
 	setup_zsh
-	install_yay
 	move_config
 }
 
