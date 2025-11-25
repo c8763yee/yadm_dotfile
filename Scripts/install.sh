@@ -150,6 +150,7 @@ function main() {
 	check_dotfile
 	setup_claude_code
 	install_required_packages
+	install_extra_package
 	install_oh_my_tmux
 	setup_zsh
 	move_config
