@@ -261,4 +261,8 @@ require("lazy").setup({
     enabled = false, -- 升级到 0.11 的时候才可以使用
   },
   "pteroctopus/faster.nvim", -- 打开大文件的时候自动 disable 一些功能，例如高亮等
+  {
+	"esmuellert/vscode-diff.nvim",
+  	dependencies = { "MunifTanjim/nui.nvim" },
+  },
 }, {})
