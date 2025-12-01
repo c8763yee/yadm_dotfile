@@ -82,16 +82,12 @@ function install_required_packages() {
 function install_extra_package() {
 	case $distro in
 	arch)
-		sudo pacman -S --noconfirm --needed lua51 rustup cargo rust-analyzer tree-sitter{,-cli} \
-			hyprland swaylock waybar nwg-{look,displays,dock-hyprland} gnome-keyring fd fastfetch wofi
-		rustup install stable
 		install_yay
-
-		yay -S --noconfirm --needed awww-git
+		./extra/arch.sh
 		;;
 	msys2) ;;
 	debian | ubuntu)
-		sudo apt install -y fd-find
+		./extra/apt.sh
 		;;
 	fedora) ;;
 	*)
