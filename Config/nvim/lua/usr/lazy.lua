@@ -18,7 +18,21 @@ require("lazy").setup({
   "folke/which-key.nvim", -- 用于配置和提示快捷键
   "kkharji/sqlite.lua", -- 数据库
   "MunifTanjim/nui.nvim", -- 图形库
-
+{
+  "linux-cultist/venv-selector.nvim",
+  dependencies = {
+    "neovim/nvim-lspconfig",
+    { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } }, -- optional: you can also use fzf-lua, snacks, mini-pick instead.
+  },
+  ft = "python", -- Load when opening Python files
+  keys = {
+    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
+  },
+  opts = { -- this can be an empty lua table - just showing below for clarity.
+      search = {}, -- if you add your own searches, they go here.
+      options = {} -- if you add plugin options, they go here.
+  },
+},
   -- 补全
   { "hrsh7th/nvim-cmp" }, -- The completion plugin
   { "hrsh7th/cmp-buffer" }, -- buffer completions
