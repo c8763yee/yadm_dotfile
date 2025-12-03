@@ -85,14 +85,11 @@ function install_extra_package() {
 		install_yay
 		./extra/arch.sh
 		;;
-	msys2) ;;
 	debian | ubuntu)
-		./extra/apt.sh
+		./extra/debian.sh
 		;;
 	fedora) ;;
 	*)
-		echo Unsupported distro
-		exit 1
 		;;
 	esac
 }
