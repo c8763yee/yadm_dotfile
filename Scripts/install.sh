@@ -83,10 +83,10 @@ function install_extra_package() {
 	case $distro in
 	arch)
 		install_yay
-		./extra/arch.sh
+		$BASE_DIR/Scripts/extra/arch.sh
 		;;
 	debian | ubuntu)
-		./extra/debian.sh
+		$BASE_DIR/Scripts/extra/debian.sh
 		;;
 	fedora) ;;
 	*)
