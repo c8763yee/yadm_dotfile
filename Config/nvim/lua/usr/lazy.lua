@@ -18,21 +18,7 @@ require("lazy").setup({
   "folke/which-key.nvim", -- 用于配置和提示快捷键
   "kkharji/sqlite.lua", -- 数据库
   "MunifTanjim/nui.nvim", -- 图形库
-{
-  "linux-cultist/venv-selector.nvim",
-  dependencies = {
-    "neovim/nvim-lspconfig",
-    { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } }, -- optional: you can also use fzf-lua, snacks, mini-pick instead.
-  },
-  ft = "python", -- Load when opening Python files
-  keys = {
-    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
-  },
-  opts = { -- this can be an empty lua table - just showing below for clarity.
-      search = {}, -- if you add your own searches, they go here.
-      options = {} -- if you add plugin options, they go here.
-  },
-},
+
   -- 补全
   { "hrsh7th/nvim-cmp" }, -- The completion plugin
   { "hrsh7th/cmp-buffer" }, -- buffer completions
@@ -125,10 +111,10 @@ require("lazy").setup({
   "folke/tokyonight.nvim",
   { "catppuccin/nvim", name = "catppuccin", priority = 1000 },
   -- git 管理
-  "tpope/vim-fugitive", -- 显示 git blame，实现一些基本操作的快捷执行
   "rhysd/git-messenger.vim", -- 利用 git blame 显示当前行的 commit message
+  "tpope/vim-fugitive", -- 实现一些基本操作的快捷执行
   "lewis6991/gitsigns.nvim", -- 显示改动的信息
-  "f-person/git-blame.nvim", -- 显示 git blame 信息
+  {'akinsho/git-conflict.nvim', version = "*", config = true}, -- 解决 git 冲突
   -- 基于 telescope 的搜索
   "nvim-telescope/telescope.nvim",
   {
@@ -193,7 +179,6 @@ require("lazy").setup({
     "olimorris/persisted.nvim",
   }, -- 自动保存关闭时候的会话
   "nvimtools/hydra.nvim", -- 消除重复快捷键，可以用于调整 window 大小等
-  "voldikss/vim-translator", -- 翻译
   { "andrewferrier/debugprint.nvim", version = "*" }, -- 快速插入 print 来调试
   { "xiyaowong/telescope-emoji.nvim" },
   {
@@ -275,8 +260,4 @@ require("lazy").setup({
     enabled = false, -- 升级到 0.11 的时候才可以使用
   },
   "pteroctopus/faster.nvim", -- 打开大文件的时候自动 disable 一些功能，例如高亮等
-  {
-	"esmuellert/vscode-diff.nvim",
-  	dependencies = { "MunifTanjim/nui.nvim" },
-  },
 }, {})

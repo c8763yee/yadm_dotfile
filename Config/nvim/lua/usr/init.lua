@@ -50,3 +50,6 @@ require("persisted").setup({
   end,
 })
 
+require('gitsigns').setup {
+  current_line_blame = true,
+}

@@ -31,3 +31,5 @@
 [user]
 	email = rrrrr4413@gmail.com
 	name = c8763yee
+[init]
+	defaultBranch = main

@@ -88,6 +88,10 @@ download)
 		exit 1
 	fi
 
+	if [[ $(echo $VERSION | cut -d'.' -f3) == '0' ]]; then
+		VERSION=$(echo $VERSION| cut -d'.' -f1,2)
+	fi
+	
 	# Get the major version number (e.g., '6' from '6.5.3')
 	MAJOR_VERSION=$(echo "$VERSION" | cut -d'.' -f1)
 

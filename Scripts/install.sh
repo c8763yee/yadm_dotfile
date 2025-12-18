@@ -66,7 +66,6 @@ function install_required_packages() {
 	debian | ubuntu)
 		sudo apt update
 		sudo apt install -y ${PACKAGES[@]}
-		sudo apt install -y fd-find
 		;;
 	fedora)
 		sudo dnf update -y

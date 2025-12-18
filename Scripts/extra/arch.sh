@@ -6,7 +6,8 @@ sudo pacman -S --noconfirm --needed \
 	pipewire pipewire-pulse wireplumber pavucontrol xorg xorg-xwayland \
 	xdg-desktop-portal-hyprland xdg-desktop-portal-gtk polkit-kde-agent \
 	qt5-wayland qt6-wayland qt5ct qt6ct nwg-look udiskie \
-	greetd greetd-tuigreet fcitx5-im fcitx5-chewing fcitx5-qt fcitx5-gtk fcitx5-chinese-addons
+	greetd greetd-tuigreet mutt libesmtp \
+	fcitx5-im fcitx5-chewing fcitx5-qt fcitx5-gtk fcitx5-chinese-addons
 
 rustup install stable
-yay -S --noconfirm --needed awww-git pw-volume wlogout
+yay -S --noconfirm --needed pw-volume wlogout

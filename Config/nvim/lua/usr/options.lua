@@ -17,7 +17,7 @@ local options = {
   writebackup = false, -- if a file is being edited by another program (or was written to file while editing with another program), it is not allowed to be edited
   cursorline = true, -- highlight the current line
   number = true, -- set numbered lines
-
+  relativenumber = true, -- set relative numbered lines
   signcolumn = "yes", -- always show the sign column, otherwise it would shift the text each time
   linebreak = true, -- companion to wrap, don't split words
   guifont = "monospace:h17", -- the font used in graphical neovim applications

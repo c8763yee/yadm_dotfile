@@ -16,11 +16,8 @@ local servers = {
   "vimls",
   "yamlls",
   "perlnavigator",
-  "typos_lsp",
+  -- "typos_lsp",
   -- "tsserver",
-  
-  -- python
-  "ruff",
 }
 
 require("mason").setup()

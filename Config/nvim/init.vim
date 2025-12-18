@@ -2,14 +2,12 @@ set autoread
 au FocusGained,BufEnter * :checktime
 " 当失去焦点或者离开当前的 buffer 的时候保存
 set autowrite
-set nu rnu
 autocmd FocusLost,BufLeave * silent! update
 
 " 映射 leader 键为 ,
 let g:mapleader = ','
 " 将 q 映射为 <leader>q，因为录制宏的操作比较少，而关掉窗口的操作非常频繁
 noremap <leader>q q
-inoremap kj <ESC>
 
 " 访问系统剪切板
 map <leader>y "+y
