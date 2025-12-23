@@ -118,6 +118,7 @@ function move_config() {
 	ln -sf $BASE_DIR/Config/kitty $XDG_CONFIG_HOME
 	ln -sf $BASE_DIR/Config/fastfetch $XDG_CONFIG_HOME
 	ln -sf $BASE_DIR/Config/awww $XDG_CONFIG_HOME
+	ln -sf $BASE_DIR/Config/swaylock $XDG_CONFIG_HOME
 
 	ln -sf $BASE_DIR/Config/gdb/.gdbinit $BASE_DIR/.gdbinit
 	ln -sf $BASE_DIR/Config/git/.gitconfig $HOME/.gitconfig

@@ -259,5 +259,15 @@ require("lazy").setup({
     keys = {},
     enabled = false, -- 升级到 0.11 的时候才可以使用
   },
+  -- claude-code
+  {
+    "greggh/claude-code.nvim",
+    dependencies = {
+      "nvim-lua/plenary.nvim", -- Required for git operations
+    },
+    config = function()
+      require("claude-code").setup()
+    end
+  },
   "pteroctopus/faster.nvim", -- 打开大文件的时候自动 disable 一些功能，例如高亮等
 }, {})

@@ -1,0 +1,17 @@
+ignore-empty-password
+show-failed-attempts
+show-keyboard-layout
+debug
+clock
+timestr=%R
+datestr=%a, %e of %B
+
+screenshots
+
+fade-in=0
+effect-blur=20x1
+effect-scale=0.3
+indicator
+indicator-radius=240
+indicator-thickness=20
+indicator-caps-lock
