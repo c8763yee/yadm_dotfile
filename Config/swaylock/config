@@ -3,8 +3,8 @@ show-failed-attempts
 show-keyboard-layout
 debug
 clock
-timestr=%R
-datestr=%a, %e of %B
+timestr=%H:%M:%S
+datestr=%Y %m/%d
 
 screenshots
 
