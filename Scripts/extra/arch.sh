@@ -10,4 +10,4 @@ sudo pacman -S --noconfirm --needed \
 	fcitx5-im fcitx5-chewing fcitx5-qt fcitx5-gtk fcitx5-chinese-addons
 
 rustup install stable
-yay -S --noconfirm --needed pw-volume wlogout swaylock-effect
+yay -S --noconfirm --needed pw-volume wlogout swaylock-effects

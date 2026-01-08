@@ -31,6 +31,7 @@ wk.add({
   { "<leader>k", "<cmd>Telescope colorscheme<cr>",                    desc = "colorscheme" },
   { "<leader>m", "<cmd>Telescope bookmarks<cr>",                      desc = "search bookmarks" },
   { "<leader>o", "<cmd>Telescope lsp_document_symbols<cr>",           desc = "search symbols in file" },
+  { "<leader>n", "<cmd>Telescope keymaps<cr>", desc = "Key Maps" },
   -- leader p used for paste from system clipboard
   { "<leader>s", "<cmd>Telescope lsp_dynamic_workspace_symbols <cr>", desc = "search symbols in project" },
   -- leader t : markdown table mode
