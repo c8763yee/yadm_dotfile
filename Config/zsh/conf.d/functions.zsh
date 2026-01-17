@@ -27,8 +27,8 @@ function UPDATE() {
 # --- 自動設定 WSL2 portproxy ---
 
 setup_portproxy() {
-	# 只在 WSL 內執行
-	if grep -qEi "(microsoft|wsl)" /proc/version &>/dev/null; then
+	# 只在 WSL 內執行(exclude ssh)
+	if [[ -z $SSH_CONNECTION ]] && grep -qEi "(microsoft|wsl)" /proc/version &>/dev/null; then
 		if [[ ! -f $HOME/.env ]]; then
 			echo "[WSL PortProxy] $HOME/.env file not found, please create it first."
 			return

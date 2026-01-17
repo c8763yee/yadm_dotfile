@@ -269,5 +269,11 @@ require("lazy").setup({
       require("claude-code").setup()
     end
   },
+{
+   "m4xshen/hardtime.nvim",
+   lazy = false,
+   dependencies = { "MunifTanjim/nui.nvim" },
+   opts = {},
+},
   "pteroctopus/faster.nvim", -- 打开大文件的时候自动 disable 一些功能，例如高亮等
 }, {})
