@@ -89,6 +89,7 @@ function install_extra_package() {
 		;;
 	fedora) ;;
 	*)
+		$BASE_DIR/Scripts/extra/fedora.sh
 		;;
 	esac
 }
