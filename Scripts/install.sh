@@ -29,6 +29,8 @@ PACKAGES=(
 	curl
 	neovim
 	wget
+	bc
+	bear
 	tmux
 	fzf
 	ripgrep
@@ -37,9 +39,17 @@ PACKAGES=(
 	nodejs
 	npm
 	luarocks
-	yarn
 	s-tui
 	pre-commit
+	msmtp
+	mutt
+	fastfetch
+	# kernel build (common name across distros)
+	bison
+	flex
+	cpio
+	perl
+	make
 )
 
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -87,9 +97,11 @@ function install_extra_package() {
 	debian | ubuntu)
 		$BASE_DIR/Scripts/extra/debian.sh
 		;;
-	fedora) ;;
-	*)
+	fedora)
 		$BASE_DIR/Scripts/extra/fedora.sh
+		;;
+	*)
+		echo "No extra packages for $distro"
 		;;
 	esac
 }
