@@ -10,3 +10,5 @@ sudo dnf install -y \
 	elfutils-libelf-devel \
 	dwarves \
 	git-email
+
+sudo dnf --enablerepo=fedora-debuginfo,updates-debuginfo install kernel-debuginfo

@@ -11,6 +11,9 @@ function UPDATE() {
 		debian|ubuntu)
 			sudo apt update -y && sudo apt upgrade -y && sudo apt autoremove -y
 			;;
+		fedora)
+			sudo dnf upgrade -y
+			;;
 		*)
 			echo "Unknown distro"
 			;;
