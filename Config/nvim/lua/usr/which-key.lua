@@ -106,6 +106,7 @@ wk.add({
   { "<space>t8", "<cmd>let &cc = &cc == '' ? '81' : ''<cr>",              desc = "highlight 80 line" },
   { "<space>tb", "<cmd>let &tw = &tw == '0' ? '80' : '0'<cr>",            desc = "automaticall break line at 80" },
   { "<space>th", "<cmd>noh<cr>",                                          desc = "Stop the highlighting" },
+  { "<space>ti", function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled()) end, desc = "toggle inlay hint" },
   { "<space>tm", "<cmd>TableModeToggle<cr>",                              desc = "markdown table edit mode" },
   { "<space>tr", "<cmd>TransferToggle<cr>",                               desc = "toggle rsync on save" },
   { "<space>ts", "<cmd>set spell!<cr>",                                   desc = "spell check" },

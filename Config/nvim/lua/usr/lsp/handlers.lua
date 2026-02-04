@@ -52,6 +52,9 @@ M.setup = function()
 end
 
 M.on_attach = function(client, bufnr)
+  -- 啟用 inlay hint
+  vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+
   if client.name == "tsserver" then
     client.server_capabilities.documentFormattingProvider = false
   end
