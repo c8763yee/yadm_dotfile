@@ -1,1 +1,1 @@
-bash -c "Scripts/install.sh $HOME"
+bash -c "$HOME/Scripts/install.sh $HOME"

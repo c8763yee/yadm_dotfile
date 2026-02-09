@@ -43,4 +43,3 @@ bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
 
 zinit load djui/alias-tips
-zinit update --parallel $(nproc) && zinit self-update

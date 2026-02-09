@@ -10,7 +10,8 @@ sudo pacman -S --noconfirm --needed \
 	ncurses \
 	openssl \
 	libelf \
-	pahole
+	pahole \
+	cronie
 
 # Hyprland desktop environment (Arch-only)
 sudo pacman -S --noconfirm --needed \
@@ -26,3 +27,6 @@ sudo pacman -S --noconfirm --needed \
 
 rustup install stable
 yay -S --noconfirm --needed pw-volume wlogout swaylock-effects
+
+# apply cronjob
+sudo systemctl enable --now cronie

@@ -152,6 +152,12 @@ function setup_claude_code() {
 	cp -r $BASE_DIR/Config/prompts/prompts/claude/agents $BASE_DIR/Config/prompts/prompts/claude/CLAUDE.md $BASE_DIR/Config/prompts/prompts/claude/commands $HOME/.claude
 }
 
+function apply_crontab(){
+	# reset and apply from crontab file
+	crontab <(cat /dev/null)
+	crontab $BASE_DIR/Config/crontab
+}
+
 function main() {
 	check_dotfile
 	setup_claude_code
@@ -160,6 +166,7 @@ function main() {
 	install_oh_my_tmux
 	setup_zsh
 	move_config
+	apply_crontab
 }
 
 main
