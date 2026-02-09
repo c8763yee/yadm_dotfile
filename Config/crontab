@@ -1,0 +1,1 @@
+@daily zsh -c 'zinit update --parallel $(nproc) && zinit self-update'
