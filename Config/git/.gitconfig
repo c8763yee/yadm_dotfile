@@ -28,8 +28,13 @@
 [pretty]
 	commit = "commit %h (\"%s\")"
 	fixes = "Fixes: %h (\"%s\")"
+
 [user]
 	email = rrrrr4413@gmail.com
 	name = c8763yee
+
 [init]
 	defaultBranch = main
+
+[sendemail]
+   smtpserver = /usr/bin/msmtp
