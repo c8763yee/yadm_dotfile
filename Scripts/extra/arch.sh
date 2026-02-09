@@ -23,10 +23,12 @@ sudo pacman -S --noconfirm --needed \
 	xdg-desktop-portal-hyprland xdg-desktop-portal-gtk polkit-kde-agent \
 	qt5-wayland qt6-wayland qt5ct qt6ct udiskie \
 	greetd greetd-tuigreet \
-	fcitx5-im fcitx5-chewing fcitx5-qt fcitx5-gtk fcitx5-chinese-addons
+	fcitx5-im fcitx5-chewing fcitx5-qt fcitx5-gtk fcitx5-chinese-addons \
+	noto-fonts-{cjk,emoji} breeze{,-gtk}
 
 rustup install stable
-yay -S --noconfirm --needed pw-volume wlogout swaylock-effects
+yay -S --noconfirm --needed pw-volume wlogout swaylock-effects brave-bin \
+	visual-studio-code-bin awww-git
 
 # apply cronjob
 sudo systemctl enable --now cronie
