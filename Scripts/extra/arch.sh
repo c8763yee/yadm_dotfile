@@ -22,9 +22,10 @@ sudo pacman -S --noconfirm --needed \
 	pipewire pipewire-pulse wireplumber pavucontrol xorg xorg-xwayland \
 	xdg-desktop-portal-hyprland xdg-desktop-portal-gtk polkit-kde-agent \
 	qt5-wayland qt6-wayland qt5ct qt6ct udiskie \
-	greetd greetd-tuigreet \
+	greetd greetd-tuigreet wl-clipboard rofi \
 	fcitx5-im fcitx5-chewing fcitx5-qt fcitx5-gtk fcitx5-chinese-addons \
-	noto-fonts-{cjk,emoji} breeze{,-gtk}
+	noto-fonts-{cjk,emoji} breeze{,-gtk} dolphin \
+	rclone zram-generator zerotier-one
 
 rustup install stable
 yay -S --noconfirm --needed pw-volume wlogout swaylock-effects brave-bin \
