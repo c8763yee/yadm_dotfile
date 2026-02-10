@@ -1,28 +1,23 @@
 #!/bin/bash
+STATE="${XDG_RUNTIME_DIR:-/tmp}/power_state"
 
-# --- GPU Power (NVIDIA) ---
-# Trying to get GPU power consumption using nvidia-smi
-gpu_w_formatted="N/A"
-gpu_power_w=$(nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits 2>/dev/null)
-if [[ $? -eq 0 && ! -z "$gpu_power_w" ]]; then
-    gpu_w_formatted=$(printf "%.2fW" "$gpu_power_w")
-fi
+# Read previous and current CPU energy
+prev=$(cat "$STATE" 2>/dev/null || echo 0)
+curr=$(cat /sys/class/powercap/intel-rapl:0/energy_uj 2>/dev/null || echo 0)
+echo "$curr" > "$STATE"
 
-cpu_w_formatted="N/A"
-PREVIOUS_POWER_FILE="/tmp/previous_cpu_power_uj"
+# Calculate CPU watts (needs floating point)
+cpu=$(awk -v c="$curr" -v p="$prev" 'BEGIN {
+    if (c > 0 && p > 0) printf "%.2f", (c - p) / 1000000
+}')
 
-# TODO: Write a kernel module to get previous power reading instead of using a temp file.
-current_uj=$(sudo cat /sys/class/powercap/intel-rapl:0/energy_uj)
-if [[ -f "$PREVIOUS_POWER_FILE" ]]; then
-    previous_uj=$(cat "$PREVIOUS_POWER_FILE")
-    cpu_power_w=$(echo "scale=2; ($current_uj - $previous_uj) / 1000000" | bc)
-    cpu_w_formatted=$(printf "%.2fW" "$cpu_power_w")
-fi
-echo "$current_uj" > "$PREVIOUS_POWER_FILE"
+# Get GPU watts
+gpu=$(nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits 2>/dev/null)
+[[ -n "$gpu" ]] && gpu=$(printf "%.2f" "$gpu")
 
-# "CPU-W / GPU-W"
-final_text="CPU: ${cpu_w_formatted} | GPU: ${gpu_w_formatted}"
-tooltip_text="CPU: ${cpu_w_formatted}\nGPU: ${gpu_w_formatted}"
+# Format output
+cpu_text="${cpu:+${cpu}W}"
+gpu_text="${gpu:+${gpu}W}"
 
-# Convert data to Waybar JSON format
-printf '{"text": "%s", "tooltip": "%s"}\n' "$final_text" "$tooltip_text"
+printf '{"text":"CPU: %s | GPU: %s","tooltip":"CPU: %s\\nGPU: %s"}\n' \
+    "${cpu_text:-N/A}" "${gpu_text:-N/A}" "${cpu_text:-N/A}" "${gpu_text:-N/A}"
