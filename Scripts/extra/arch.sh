@@ -25,7 +25,7 @@ sudo pacman -S --noconfirm --needed \
 	greetd greetd-tuigreet wl-clipboard rofi \
 	fcitx5-im fcitx5-chewing fcitx5-qt fcitx5-gtk fcitx5-chinese-addons \
 	noto-fonts-{cjk,emoji} breeze{,-gtk} dolphin \
-	rclone zram-generator zerotier-one
+	rclone zram-generator zerotier-one archlinux-xdg-menu
 
 rustup install stable
 yay -S --noconfirm --needed pw-volume wlogout swaylock-effects brave-bin \
@@ -33,3 +33,7 @@ yay -S --noconfirm --needed pw-volume wlogout swaylock-effects brave-bin \
 
 # apply cronjob
 sudo systemctl enable --now cronie
+
+# fix open-with context problem
+sudo cp /etc/xdg/menus/arch-applications.menu /etc/xdg/menus/applications.menu
+kbuildsycoca6 --noincremental
