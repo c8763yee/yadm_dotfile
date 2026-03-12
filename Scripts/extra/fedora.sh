@@ -9,6 +9,7 @@ sudo dnf install -y \
 	openssl-devel \
 	elfutils-libelf-devel \
 	dwarves \
-	git-email
+	git-email \
+	rustfmt rustup 
 
 sudo dnf --enablerepo=fedora-debuginfo,updates-debuginfo install kernel-debuginfo

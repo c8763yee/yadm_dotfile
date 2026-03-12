@@ -1,27 +1,4 @@
 #!/bin/bash
-: <<COMMENT
-This script is used to install the required packages for yadm bootstrap
-
-Available distro: Arch, Debian, Fedora, Ubuntu
-Package:
-- yadm
-- git
-- curl
-- zsh
-- neovim
-- wget
-- tmux
-- vim plugins required package
-
-Plugin
-- oh-my-zsh
-- zsh-autosuggestions
-- zsh-syntax-highlighting
-- zsh-completions
-- powerlevel10k
-- linux_config
-- oh-my-tmux
-COMMENT
 
 PACKAGES=(
 	zsh
@@ -44,6 +21,7 @@ PACKAGES=(
 	msmtp
 	mutt
 	fastfetch
+
 	# kernel build (common name across distros)
 	bison
 	flex
@@ -149,10 +127,30 @@ function check_dotfile() {
 
 function setup_claude_code() {
 	curl -fsSL https://claude.ai/install.sh | bash
-	cp -r $BASE_DIR/Config/prompts/prompts/claude/agents $BASE_DIR/Config/prompts/prompts/claude/CLAUDE.md $BASE_DIR/Config/prompts/prompts/claude/commands $HOME/.claude
+
+	# install skills/mcps
+
+	## zhtw-mcp
+	git clone https://github.com/sysprog21/zhtw-mcp.git
+	pushd zhtw-mcp
+	make
+	claude mcp add zhtw-mcp -- target/release/zhtw-mcp
+	popd
+
+	## pensieve
+	# 1. Install skill
+	git clone -b main https://github.com/kingkongshot/Pensieve.git .claude/skills/pensieve
+
+	# 2. Initialize (create user data directories, seed default content, generate SKILL.md router file)
+	bash .claude/skills/pensieve/.src/scripts/init-project-data.sh
+
+	# 3. Install Claude hooks (required for Claude Code users, skip for other clients)
+	claude plugin marketplace add kingkongshot/Pensieve#claude-plugin
+	claude plugin install pensieve@kingkongshot-marketplace --scope project
+
 }
 
-function apply_crontab(){
+function apply_crontab() {
 	# reset and apply from crontab file
 	crontab <(cat /dev/null)
 	crontab $BASE_DIR/Config/crontab
@@ -169,5 +167,20 @@ function main() {
 	apply_crontab
 }
 
-main
+is_sourced() {
+	if [ -n "$BASH_VERSION" ]; then
+		[[ "${BASH_SOURCE[0]}" != "${0}" ]]
+	elif [ -n "$ZSH_VERSION" ]; then
+		[[ "$zsh_eval_context" == *file* ]]
+	else
+		[[ "$0" == *"sh" ]]
+	fi
+}
+
+# 2. 執行主程式前判斷
+if is_sourced; then
+	echo "$0 sourced"
+else
+	main
+fi
 echo Done

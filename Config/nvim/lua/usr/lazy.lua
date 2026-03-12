@@ -62,6 +62,17 @@ require("lazy").setup({
       })
     end,
   }, -- lsp 增强，例如提供 winbar 的功能
+{
+  "linux-cultist/venv-selector.nvim",
+  dependencies = {
+    { "nvim-telescope/telescope.nvim", version = "*", dependencies = { "nvim-lua/plenary.nvim" } }, -- optional: you can also use fzf-lua, snacks, mini-pick instead.
+  },
+  ft = "python", -- Load when opening Python files
+  opts = {
+    options = {}, -- plugin-wide options
+    search = {}   -- custom search definitions
+  },
+},
   -- 配置文件在 https://github.com/nvimdev/lspsaga.nvim/blob/main/lua/lspsaga/init.lua
   {
     "stevearc/conform.nvim",

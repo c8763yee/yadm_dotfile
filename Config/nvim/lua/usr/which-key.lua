@@ -35,6 +35,7 @@ wk.add({
   -- leader p used for paste from system clipboard
   { "<leader>s", "<cmd>Telescope lsp_dynamic_workspace_symbols <cr>", desc = "search symbols in project" },
   -- leader t : markdown table mode
+  { "<leader>v", "<cmd>VenvSelect<cr>", desc = "select python virtual environment"},
   -- leader x used for map language specific function
   -- " 使用 <leader> [number] 切换到第 [number] 个 window
   { "<space>0",  "<cmd>10wincmd w <cr>",                              desc = "jump to window 0" },

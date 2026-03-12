@@ -1,4 +1,0 @@
-[submodule "Config/prompts"]
-	path = Config/prompts
-	url = https://github.com/c8763yee/prompts
-	branch = main
