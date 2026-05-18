@@ -30,11 +30,12 @@ pkg_install() {
 # 一次 Python 呼叫解析整份套件清單，避免 N 次 subprocess
 resolve_packages() {
     local pkg_file="$1"
-    python3 - "$DISTRO" "$PACKAGES_DIR/aliases.yaml" < "$pkg_file" <<'PYEOF'
+    python3 - "$DISTRO" "$PACKAGES_DIR/aliases.yaml" "$pkg_file" <<'PYEOF'
 import sys, pathlib
 
 distro = sys.argv[1]
 aliases_file = pathlib.Path(sys.argv[2])
+pkg_file = pathlib.Path(sys.argv[3])
 
 aliases = {}
 current_pkg = None
@@ -47,7 +48,7 @@ for line in aliases_file.read_text().splitlines():
         key, _, val = line.strip().partition(":")
         aliases[current_pkg][key.strip()] = val.strip()
 
-for line in sys.stdin:
+for line in pkg_file.read_text().splitlines():
     pkg = line.strip()
     if not pkg or pkg.startswith("#"):
         continue
