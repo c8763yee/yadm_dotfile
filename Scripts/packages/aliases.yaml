@@ -1,0 +1,70 @@
+# 跨 distro 套件名稱映射
+# ~ 表示此 distro 不需要安裝（已內建或不適用）
+# 未列出的 distro 使用鍵名作為套件名稱
+
+fd:
+  arch: fd
+  debian: fd-find
+  ubuntu: fd-find
+  fedora: fd-find
+
+yarn:
+  arch: yarn
+  debian: yarnpkg
+  ubuntu: yarnpkg
+  fedora: yarn
+
+base-devel:
+  arch: base-devel
+  debian: build-essential
+  ubuntu: build-essential
+  fedora: ~
+
+ncurses:
+  arch: ncurses
+  debian: libncurses-dev
+  ubuntu: libncurses-dev
+  fedora: ncurses-devel
+
+openssl:
+  arch: openssl
+  debian: libssl-dev
+  ubuntu: libssl-dev
+  fedora: openssl-devel
+
+libelf:
+  arch: libelf
+  debian: libelf-dev
+  ubuntu: libelf-dev
+  fedora: elfutils-libelf-devel
+
+pahole:
+  arch: pahole
+  debian: dwarves
+  ubuntu: dwarves
+  fedora: dwarves
+
+cronie:
+  arch: cronie
+  debian: cron
+  ubuntu: cron
+  fedora: cronie
+
+git-email:
+  arch: ~
+  debian: git-email
+  ubuntu: git-email
+  fedora: git-email
+
+git-delta:
+  arch: git-delta
+  debian: git-delta
+  ubuntu: git-delta
+  fedora: git-delta
+
+plasma:
+  arch: plasma
+  debian: kde-plasma-desktop
+  ubuntu: kde-plasma-desktop
+  fedora: plasma-desktop
+

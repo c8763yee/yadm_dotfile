@@ -1,1 +1,38 @@
-bash -c "$HOME/Scripts/install.sh $HOME"
+#!/bin/sh
+. /etc/os-release
+
+echo "偵測到 Distro：$PRETTY_NAME"
+echo ""
+
+WM_DIR="$HOME/Scripts/packages/wm"
+
+if [ -n "$YADM_CLASS" ]; then
+    CLASS="$YADM_CLASS"
+else
+    echo "可用環境："
+    i=1
+    for f in "$WM_DIR"/*.txt; do
+        # 只列主要清單，跳過 -aur.txt
+        case "$f" in *-aur.txt) continue ;; esac
+        name=$(basename "$f" .txt)
+        # capitalize first letter via python3
+        label=$(python3 -c "import sys; print(sys.argv[1].capitalize())" "$name")
+        echo "  $i) $label"
+        eval "WM_$i=$label"
+        i=$((i + 1))
+    done
+    echo "  $i) Base only"
+    eval "WM_$i=Base"
+
+    printf "選擇 [1-$i]: "
+    read -r choice
+    eval "CLASS=\$WM_$choice"
+fi
+
+[ -z "$CLASS" ] && echo "無效選項，使用 Base" && CLASS="Base"
+
+yadm config local.class "$CLASS"
+echo "已設定 class: $CLASS"
+echo ""
+
+bash "$HOME/Scripts/install.sh" "$HOME"

@@ -1,0 +1,61 @@
+# Shell & terminal
+zsh
+tmux
+fzf
+
+# Editors
+neovim
+
+# Version control
+git
+git-email
+git-delta
+
+# Network
+curl
+wget
+
+# Build tools
+base-devel
+make
+gcc
+clang
+bear
+
+# System tools
+bc
+jq
+s-tui
+fastfetch
+
+# Node.js
+nodejs
+npm
+yarn
+
+# Lua
+luarocks
+
+# Python tools
+pre-commit
+
+# Mail
+msmtp
+mutt
+
+# File search
+fd
+ripgrep
+
+# Kernel build
+bison
+flex
+cpio
+perl
+ncurses
+openssl
+libelf
+pahole
+
+# System services
+cronie

@@ -1,0 +1,3 @@
+swaylock-effects
+brave-bin
+visual-studio-code-bin
