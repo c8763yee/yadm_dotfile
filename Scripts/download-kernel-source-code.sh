@@ -93,9 +93,11 @@ download)
 	fi
 	
 	# Get the major version number (e.g., '6' from '6.5.3')
-	MAJOR_VERSION=$(echo "$VERSION" | cut -d'.' -f1)
+	MAJOR=$(echo "$VERSION" | cut -d'.' -f1)
+	MINOR=$(echo "$VERSION" | cut -d'.' -f2)
+	VERSION_SHORT=$([[ $MAJOR -lt 3 || ( $MAJOR -eq 3 && $MINOR -eq 0 ) ]] && echo "v${MAJOR}.${MINOR}" || echo "v${MAJOR}.x")
 
-	URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR_VERSION}.x/linux-${VERSION}.tar.xz"
+	URL="https://cdn.kernel.org/pub/linux/kernel/${VERSION_SHORT}/linux-${VERSION}.tar.xz"
 	TARBALL="$HOME/linux-kernel/linux-${VERSION}.tar.xz"
 	EXTRACT_DIR="$HOME/linux-kernel/linux-${VERSION}"
 
