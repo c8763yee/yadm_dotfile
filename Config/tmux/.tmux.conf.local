@@ -398,6 +398,7 @@ bind e new-session
 # move status line to top
 #set -g status-position top
 
+set -g focus-events on
 
 # -- tpm -----------------------------------------------------------------------
 

@@ -192,6 +192,10 @@ check_dotfile() {
     yadm submodule update --init
 }
 
+move_exec() {
+	mkdir -p $HOME/.local/bin
+	cp -r $BASE_DIR/Exec/* $HOME/.local/bin
+}
 main() {
     local class
     class=$(yadm config local.class 2>/dev/null || echo "Base")
@@ -204,6 +208,7 @@ main() {
     setup_zsh
     move_config "$class"
     apply_crontab
+    move_exec
 }
 
 is_sourced() {
