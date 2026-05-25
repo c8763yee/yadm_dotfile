@@ -194,7 +194,9 @@ check_dotfile() {
 
 move_exec() {
 	mkdir -p $HOME/.local/bin
-	cp -r $BASE_DIR/Exec/* $HOME/.local/bin
+
+	cp -r $BASE_DIR/Exec/user/* $HOME/.local/bin
+	sudo cp -r $BASE_DIR/Exec/root/* /usr/bin
 }
 main() {
     local class
