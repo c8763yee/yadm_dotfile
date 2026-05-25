@@ -62,6 +62,9 @@ function mkcd() {
 	mkdir -p "$1" && cd "$1" || return
 }
 
+function psn(){
+	ps aux | grep "$1"
+}
 # 只在第一次進入 zsh session 時執行一次
 if [ -z "$SETUP_PORTPROXY_DONE" ]; then
 	setup_portproxy

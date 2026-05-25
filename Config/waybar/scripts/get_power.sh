@@ -3,7 +3,7 @@ STATE="${XDG_RUNTIME_DIR:-/tmp}/power_state"
 
 # Read previous and current CPU energy
 prev=$(cat "$STATE" 2>/dev/null || echo 0)
-curr=$(cat /sys/class/powercap/intel-rapl:0/energy_uj 2>/dev/null || echo 0)
+curr=$(sudo cat /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj 2>/dev/null || echo 0)
 echo "$curr" > "$STATE"
 
 # Calculate CPU watts (needs floating point)
