@@ -11,33 +11,33 @@ set -e
 ##
 usage() {
 	printf "Usage: %s --method download <version>\n" "$0"
-	printf "       %s --method git\n" "$0"
+	printf "       %s --method git <tree>\n" "$0"
 	printf "\n"
 	printf "Options:\n"
 	printf "  --method download <version>  : Download and extract specific kernel version tarball\n"
-	printf "  --method git                 : Clone or pull the mainline kernel git repository\n"
+	printf "  --method git <tree>          : Clone or pull a kernel git tree (default: torvalds/linux)\n"
 	printf "\n"
 	printf "Examples:\n"
 	printf "  %s --method download 6.5.3\n" "$0"
 	printf "  %s --method git\n" "$0"
+	printf "  %s --method git stable/linux\n" "$0"
+	printf "  %s --method git next/linux-next\n" "$0"
 	exit 1
 }
 
 # --- Argument Parsing ---
 
 METHOD="download"
-VERSION=$(uname -r | cut -d'-' -f 1)
+POSITIONAL=""
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 	--method)
-		if [[ -n "$2" ]] && [[ "$2" != -* ]]; then
-			METHOD=$(echo "$2" | tr '[:upper:]' '[:lower:]')
-			shift 2
-			if [[ "$METHOD" != "git" && "$METHOD" != "download" ]]; then
-				printf "❌ Error: -  -method requires an argument (git|download), got %s\n\n", "$METHOD"
-				usage
-			fi
+		METHOD="${2,,}"
+		shift 2 || usage
+		if [[ "$METHOD" != "git" && "$METHOD" != "download" ]]; then
+			printf "❌ Error: --method requires an argument (git|download), got '%s'\n\n" "$METHOD"
+			usage
 		fi
 		;;
 	-*)
@@ -45,33 +45,11 @@ while [[ $# -gt 0 ]]; do
 		usage
 		;;
 	*)
-		VERSION="$1"
+		POSITIONAL="$1"
 		shift
 		;;
 	esac
 done
-
-# Validate method
-if [[ -z "$METHOD" ]]; then
-	printf "❌ Error: --method is required\n\n"
-	usage
-fi
-
-if [[ "$METHOD" != "download" ]] && [[ "$METHOD" != "git" ]]; then
-	printf "❌ Error: Invalid method '%s'. Use 'download' or 'git'\n\n" "$METHOD"
-	usage
-fi
-
-# Validate version for download method
-if [[ "$METHOD" == "download" ]] && [[ -z "$VERSION" ]]; then
-	printf "❌ Error: Version is required for download method\n\n"
-	usage
-fi
-
-# Git method doesn't need version
-if [[ "$METHOD" == "git" ]] && [[ -n "$VERSION" ]]; then
-	printf "⚠️  Warning: Version parameter ignored for git method\n\n"
-fi
 
 # --- Main Logic ---
 
@@ -80,6 +58,8 @@ mkdir -p "$HOME/linux-kernel/"
 case "$METHOD" in
 download)
 	# --- Download Method ---
+	VERSION="${POSITIONAL:-$(uname -r | cut -d'-' -f1)}"
+
 	printf "Kernel Version: %s\n" "$VERSION"
 	printf "Method: download\n\n"
 
@@ -88,14 +68,14 @@ download)
 		exit 1
 	fi
 
-	if [[ $(echo $VERSION | cut -d'.' -f3) == '0' ]]; then
-		VERSION=$(echo $VERSION| cut -d'.' -f1,2)
+	if [[ $(echo "$VERSION" | cut -d'.' -f3) == '0' ]]; then
+		VERSION=$(echo "$VERSION" | cut -d'.' -f1,2)
 	fi
-	
+
 	# Get the major version number (e.g., '6' from '6.5.3')
 	MAJOR=$(echo "$VERSION" | cut -d'.' -f1)
 	MINOR=$(echo "$VERSION" | cut -d'.' -f2)
-	VERSION_SHORT=$([[ $MAJOR -lt 3 || ( $MAJOR -eq 3 && $MINOR -eq 0 ) ]] && echo "v${MAJOR}.${MINOR}" || echo "v${MAJOR}.x")
+	VERSION_SHORT=$([[ $MAJOR -lt 3 || ($MAJOR -eq 3 && $MINOR -eq 0) ]] && echo "v${MAJOR}.${MINOR}" || echo "v${MAJOR}.x")
 
 	URL="https://cdn.kernel.org/pub/linux/kernel/${VERSION_SHORT}/linux-${VERSION}.tar.xz"
 	TARBALL="$HOME/linux-kernel/linux-${VERSION}.tar.xz"
@@ -110,58 +90,43 @@ download)
 	printf "Downloading source tarball from:\n%s\n\n" "$URL"
 	wget -O "$TARBALL" -c "$URL"
 
-	if [ $? -ne 0 ]; then
-		printf "\n❌ Download failed. Please check the version number and your network connection.\n"
-		exit 1
-	fi
-
 	printf "\n✅ Download complete. Extracting...\n"
 	tar -xf "$TARBALL" -C "$HOME/linux-kernel/"
 
-	if [ $? -eq 0 ]; then
-		printf "✅ Extraction complete. Removing tarball...\n"
-		rm "$TARBALL"
-		printf "✅ Success! Kernel source extracted to: %s\n" "$EXTRACT_DIR"
-	else
-		printf "❌ Extraction failed.\n"
-		exit 1
-	fi
+	printf "✅ Extraction complete. Removing tarball...\n"
+	rm "$TARBALL"
+	printf "✅ Success! Kernel source extracted to: %s\n" "$EXTRACT_DIR"
 	;;
 
 git)
 	# --- Git Clone/Pull Method ---
-	printf "Method: git\n\n"
+	TREE="${POSITIONAL:-torvalds/linux}"
+
+	printf "Method: git\n"
+	printf "Tree: %s\n\n" "$TREE"
 
 	if ! command -v git &>/dev/null; then
 		printf "❌ Error: 'git' is required for the git method. Please install it.\n"
 		exit 1
 	fi
 
-	GIT_URL="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
-	DIR_NAME="$HOME/linux-kernel/linux-git"
+	GIT_URL="https://git.kernel.org/pub/scm/linux/kernel/git/${TREE}.git"
+	DIR_NAME="$HOME/linux-kernel/${TREE//\//-}"
 
 	if [ -d "$DIR_NAME" ]; then
 		printf "📁 Directory '%s' exists. Pulling latest changes...\n" "$DIR_NAME"
 		cd "$DIR_NAME"
 		git pull
-
-		if [ $? -eq 0 ]; then
-			printf "\n✅ Success! Repository updated.\n"
-		else
-			printf "\n❌ Git pull failed.\n"
-			exit 1
-		fi
+		printf "\n✅ Success! Repository updated.\n"
 	else
-		printf "Cloning mainline kernel repository into '%s'...\n" "$DIR_NAME"
+		printf "Cloning kernel repository into '%s'...\n" "$DIR_NAME"
 		git clone "$GIT_URL" "$DIR_NAME"
-
-		if [ $? -eq 0 ]; then
-			printf "\n✅ Success! Kernel source cloned into: %s\n" "$DIR_NAME"
-		else
-			printf "\n❌ Git clone failed.\n"
-			exit 1
-		fi
+		printf "\n✅ Success! Kernel source cloned into: %s\n" "$DIR_NAME"
 	fi
+	;;
+
+*)
+	usage
 	;;
 esac
 
