@@ -21,3 +21,7 @@ alias y='yadm'
 alias ssu='sudo supervisorctl'
 alias ssr='sudo systemctl'
 alias sru='systemctl --user'
+
+#virsh qemu aliases
+alias vr='virsh -c qemu:///system'
+alias vls='virsh -c qemu:///system list'
