@@ -1,0 +1,8 @@
+{
+  "custom/powerdraw": {
+    "format": "⚡ {}",
+    "exec": "~/.config/waybar/scripts/get_power.sh",
+    "return-type": "json",
+    "interval": 1
+  }
+}

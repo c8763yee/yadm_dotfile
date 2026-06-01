@@ -9,28 +9,28 @@ export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 DISTRO="$ID"
 
 pkg_update() {
-    case "$DISTRO" in
-        arch)                   sudo pacman -Syu --noconfirm ;;
-        msys2)                  pacman -Syu --noconfirm ;;
-        debian|ubuntu|raspbian) sudo apt update ;;
-        fedora)                 sudo dnf update -y ;;
-        *) echo "不支援的 distro: $DISTRO" && exit 1 ;;
-    esac
+	case "$DISTRO" in
+	arch) sudo pacman -Syu --noconfirm ;;
+	msys2) pacman -Syu --noconfirm ;;
+	debian | ubuntu | raspbian) sudo apt update ;;
+	fedora) sudo dnf update -y ;;
+	*) echo "不支援的 distro: $DISTRO" && exit 1 ;;
+	esac
 }
 
 pkg_install() {
-    case "$DISTRO" in
-        arch)                   sudo pacman -S --noconfirm --needed "$@" ;;
-        msys2)                  pacman -S --noconfirm "$@" ;;
-        debian|ubuntu|raspbian) sudo apt install -y "$@" ;;
-        fedora)                 sudo dnf install -y "$@" ;;
-    esac
+	case "$DISTRO" in
+	arch) sudo pacman -S --noconfirm --needed "$@" ;;
+	msys2) pacman -S --noconfirm "$@" ;;
+	debian | ubuntu | raspbian) sudo apt install -y "$@" ;;
+	fedora) sudo dnf install -y "$@" ;;
+	esac
 }
 
 # 一次 Python 呼叫解析整份套件清單，避免 N 次 subprocess
 resolve_packages() {
-    local pkg_file="$1"
-    python3 - "$DISTRO" "$PACKAGES_DIR/aliases.yaml" "$pkg_file" <<'PYEOF'
+	local pkg_file="$1"
+	python3 - "$DISTRO" "$PACKAGES_DIR/aliases.yaml" "$pkg_file" <<'PYEOF'
 import sys, pathlib
 
 distro = sys.argv[1]
@@ -62,135 +62,272 @@ PYEOF
 }
 
 install_packages() {
-    local pkg_file="$1"
-    local -a pkgs
-    mapfile -t pkgs < <(resolve_packages "$pkg_file")
-    [[ ${#pkgs[@]} -gt 0 ]] && pkg_install "${pkgs[@]}"
+	local pkg_file="$1"
+	local -a pkgs
+	mapfile -t pkgs < <(resolve_packages "$pkg_file")
+	[[ ${#pkgs[@]} -gt 0 ]] && pkg_install "${pkgs[@]}"
 }
 
 install_yay() {
-    sudo pacman -S --noconfirm base-devel
-    git clone https://aur.archlinux.org/yay.git /tmp/yay
-    pushd /tmp/yay || exit
-    makepkg -si --noconfirm
-    popd || exit
+	sudo pacman -S --noconfirm base-devel
+	git clone https://aur.archlinux.org/yay.git /tmp/yay
+	pushd /tmp/yay || exit
+	makepkg -si --noconfirm
+	popd || exit
 }
 
 install_required_packages() {
-    pkg_update
-    install_packages "$PACKAGES_DIR/base.txt"
+	pkg_update
+	install_packages "$PACKAGES_DIR/base.txt"
 
-    case "$DISTRO" in
-        arch)
-            sudo systemctl enable --now cronie
-            ;;
-        fedora)
-            sudo dnf --enablerepo=fedora-debuginfo,updates-debuginfo install kernel-debuginfo
-            ;;
-    esac
+	case "$DISTRO" in
+	arch)
+		sudo systemctl enable --now cronie
+		;;
+	fedora)
+		sudo dnf --enablerepo=fedora-debuginfo,updates-debuginfo install kernel-debuginfo
+		;;
+	esac
+}
+
+install_hyde() {
+	local hyde_dir="$BASE_DIR/HyDE"
+	if [[ ! -d $hyde_dir ]]; then
+		# 首次：完整安裝 (預設等同 -irs：install + restore + service)
+		git clone --depth 1 https://github.com/HyDE-Project/HyDE "$hyde_dir"
+		bash "$hyde_dir/Scripts/install.sh"
+	else
+		# 更新：拉取最新並只還原設定 (-r restore)
+		git -C "$hyde_dir" pull
+		bash "$hyde_dir/Scripts/install.sh" -r
+	fi
+}
+
+# 把 custom/powerdraw 注入每個 waybar layout 的最右欄位 (冪等)
+inject_waybar_powerdraw() {
+	python3 - "$XDG_CONFIG_HOME/waybar/layouts" "$HOME/.local/share/waybar/layouts" <<'PYEOF'
+import sys, os, json
+
+MODULE = "custom/powerdraw"
+
+def strip_jsonc(text):
+    out = []
+    i, n = 0, len(text)
+    in_str = False
+    esc = False
+    while i < n:
+        c = text[i]
+        if in_str:
+            out.append(c)
+            if esc:
+                esc = False
+            elif c == "\\":
+                esc = True
+            elif c == '"':
+                in_str = False
+            i += 1
+            continue
+        if c == '"':
+            in_str = True
+            out.append(c)
+            i += 1
+        elif c == "/" and i + 1 < n and text[i + 1] == "/":
+            i += 2
+            while i < n and text[i] != "\n":
+                i += 1
+        elif c == "/" and i + 1 < n and text[i + 1] == "*":
+            i += 2
+            while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
+                i += 1
+            i += 2
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+
+def drop_trailing_commas(text):
+    res = []
+    in_str = False
+    esc = False
+    for idx, c in enumerate(text):
+        if in_str:
+            res.append(c)
+            if esc:
+                esc = False
+            elif c == "\\":
+                esc = True
+            elif c == '"':
+                in_str = False
+            continue
+        if c == '"':
+            in_str = True
+            res.append(c)
+        elif c == ",":
+            j = idx + 1
+            while j < len(text) and text[j] in " \t\r\n":
+                j += 1
+            if j < len(text) and text[j] in "}]":
+                continue  # 丟掉這個 trailing comma
+            res.append(c)
+        else:
+            res.append(c)
+    return "".join(res)
+
+def target_list(data):
+    """回傳該放 powerdraw 的 list (最右 group 的 modules，或 modules-right 本身)。"""
+    mr = data.get("modules-right")
+    if not isinstance(mr, list):
+        return None
+    if not mr:
+        return mr  # 空的 right 區段，直接放成唯一最右模組
+    last = mr[-1]
+    if isinstance(last, str) and last.startswith("group/"):
+        grp = data.get(last)
+        if isinstance(grp, dict) and isinstance(grp.get("modules"), list):
+            return grp["modules"]
+    return mr
+
+for layout_dir in sys.argv[1:]:
+    if not os.path.isdir(layout_dir):
+        continue
+    for root, _, files in os.walk(layout_dir):
+        for fn in files:
+            if not fn.endswith(".jsonc"):
+                continue
+            path = os.path.join(root, fn)
+            try:
+                raw = open(path, encoding="utf-8").read()
+                data = json.loads(drop_trailing_commas(strip_jsonc(raw)))
+            except Exception as e:
+                print(f"skip {path}: {e}")
+                continue
+            tgt = target_list(data)
+            if tgt is None or MODULE in tgt:
+                continue
+            tgt.append(MODULE)
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+                f.write("\n")
+            print(f"injected {MODULE} -> {path}")
+PYEOF
 }
 
 install_wm_packages() {
-    local class="$1"
-    local wm_txt="$PACKAGES_DIR/wm/${class,,}.txt"
-    [[ ! -f "$wm_txt" ]] && return
+	local class="$1"
+	local wm_txt="$PACKAGES_DIR/wm/${class,,}.txt"
+	[[ ! -f "$wm_txt" ]] && return
 
-    case "$class" in
-        Hyprland)
-            [[ "$DISTRO" != "arch" ]] && echo "Hyprland 僅支援 Arch Linux，跳過 WM 安裝" && return
-            install_yay
-            install_packages "$wm_txt"
-            yay -S --noconfirm --needed $(grep -v '^#' "$PACKAGES_DIR/wm/hyprland-aur.txt")
-            rustup install stable
-            sudo cp /etc/xdg/menus/arch-applications.menu /etc/xdg/menus/applications.menu
-            kbuildsycoca6 --noincremental
-            ;;
-        Kde)
-            install_packages "$wm_txt"
-            sudo systemctl enable sddm
-            [[ "$DISTRO" == "arch" ]] && \
-                sudo cp /etc/xdg/menus/arch-applications.menu /etc/xdg/menus/applications.menu && \
-                kbuildsycoca6 --noincremental
-            ;;
-        Niri)
-            [[ "$DISTRO" != "arch" ]] && echo "Niri 僅支援 Arch Linux，跳過 WM 安裝" && return
-            install_yay
-            install_packages "$wm_txt"
-            yay -S --noconfirm --needed $(grep -v '^#' "$PACKAGES_DIR/wm/niri-aur.txt")
-            sudo systemctl enable --now cronie
-            ;;
-    esac
+	case "$class" in
+	Hyprland)
+		[[ "$DISTRO" != "arch" ]] && echo "Hyprland 僅支援 Arch Linux，跳過 WM 安裝" && return
+		install_yay
+		install_packages "$wm_txt"
+		yay -S --noconfirm --needed $(grep -v '^#' "$PACKAGES_DIR/wm/hyprland-aur.txt")
+		rustup install stable
+		sudo cp /etc/xdg/menus/arch-applications.menu /etc/xdg/menus/applications.menu
+		kbuildsycoca6 --noincremental
+		install_hyde
+		;;
+	Kde)
+		install_packages "$wm_txt"
+		sudo systemctl enable sddm
+		[[ "$DISTRO" == "arch" ]] &&
+			sudo cp /etc/xdg/menus/arch-applications.menu /etc/xdg/menus/applications.menu &&
+			kbuildsycoca6 --noincremental
+		;;
+	Niri)
+		[[ "$DISTRO" != "arch" ]] && echo "Niri 僅支援 Arch Linux，跳過 WM 安裝" && return
+		install_yay
+		install_packages "$wm_txt"
+		yay -S --noconfirm --needed $(grep -v '^#' "$PACKAGES_DIR/wm/niri-aur.txt")
+		sudo systemctl enable --now cronie
+		;;
+	esac
 }
 
 install_oh_my_tmux() {
-    ln -sf "$BASE_DIR/Config/tmux/tmux.conf" "$HOME/.tmux.conf"
-    ln -sf "$BASE_DIR/Config/tmux/.tmux.conf.local" "$HOME/.tmux.conf.local"
-    if [[ ! -d $HOME/.tmux/plugins/tpm ]]; then
-        mkdir -p "$HOME/.tmux/plugins"
-        git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
-    fi
+	ln -sf "$BASE_DIR/Config/tmux/tmux.conf" "$HOME/.tmux.conf"
+	ln -sf "$BASE_DIR/Config/tmux/.tmux.conf.local" "$HOME/.tmux.conf.local"
+	if [[ ! -d $HOME/.tmux/plugins/tpm ]]; then
+		mkdir -p "$HOME/.tmux/plugins"
+		git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+	fi
 }
 
 setup_zsh() {
-    [[ $SHELL != *zsh* ]] && chsh -s "$(which zsh)"
+	[[ $SHELL != *zsh* ]] && chsh -s "$(which zsh)"
+
+	local class="$1"
+	if [[ $class == "Hyprland" ]]; then
+		# zsh: 依 HyDE conf.d 進入點慣例，連入會遞迴 source repo conf.d 的進入點
+		mkdir -p "$XDG_CONFIG_HOME/zsh/conf.d"
+		ln -sf "$BASE_DIR/Config/zsh/.zshenv" "$XDG_CONFIG_HOME/zsh/conf.d/custom.zsh"
+		sed -i 's/return 1//' "$XDG_CONFIG_HOME/zsh/plugin.zsh"
+	else
+
+		ln -sf "$BASE_DIR/Config/zsh" "$XDG_CONFIG_HOME"
+	fi
+
 }
 
 move_config() {
-    local class="$1"
+	local class="$1"
 
-    ln -sf "$BASE_DIR/Config/zsh"              "$XDG_CONFIG_HOME"
-    ln -sf "$BASE_DIR/Config/nvim"             "$XDG_CONFIG_HOME"
-    ln -sf "$BASE_DIR/Config/fastfetch"        "$XDG_CONFIG_HOME"
-    ln -sf "$BASE_DIR/Config/gdb/.gdbinit"     "$BASE_DIR/.gdbinit"
-    ln -sf "$BASE_DIR/Config/git/.gitconfig"   "$HOME/.gitconfig"
+	ln -sf "$BASE_DIR/Config/nvim" "$XDG_CONFIG_HOME"
+	ln -sf "$BASE_DIR/Config/gdb/.gdbinit" "$BASE_DIR/.gdbinit"
+	ln -sf "$BASE_DIR/Config/git/.gitconfig" "$HOME/.gitconfig"
 
-    case "$class" in
-        Hyprland)
-            ln -sf "$BASE_DIR/Config/hypr"      "$XDG_CONFIG_HOME"
-            ln -sf "$BASE_DIR/Config/waybar"    "$XDG_CONFIG_HOME"
-            ln -sf "$BASE_DIR/Config/kitty"     "$XDG_CONFIG_HOME"
-            ln -sf "$BASE_DIR/Config/awww"      "$XDG_CONFIG_HOME"
-            ln -sf "$BASE_DIR/Config/swaylock"  "$XDG_CONFIG_HOME"
-            ;;
-        Niri)
-            ln -sf "$BASE_DIR/Config/niri"      "$XDG_CONFIG_HOME"
-            ln -sf "$BASE_DIR/Config/waybar"    "$XDG_CONFIG_HOME"
-            ln -sf "$BASE_DIR/Config/foot"      "$XDG_CONFIG_HOME"
-            ln -sf "$BASE_DIR/Config/swaylock"  "$XDG_CONFIG_HOME"
-            ;;
-    esac
+	if [[ $class == "Hyprland" ]]; then
+		# waybar: 自訂 powerdraw 模組 + 腳本，並注入各 layout 最右欄位
+		mkdir -p "$XDG_CONFIG_HOME/waybar/modules" "$XDG_CONFIG_HOME/waybar/scripts"
+		ln -sf "$BASE_DIR/Config/waybar/custom-powerdraw.jsonc" "$XDG_CONFIG_HOME/waybar/modules/"
+		ln -sf "$BASE_DIR/Config/waybar/scripts/get_power.sh" "$XDG_CONFIG_HOME/waybar/scripts/"
+		inject_waybar_powerdraw
+
+		ln -sf "$BASE_DIR/Config/hypr/userprefs.conf" "$XDG_CONFIG_HOME/hypr/userprefs.conf"
+	else
+		if [[ $class == "Niri" ]]; then
+			ln -sf "$BASE_DIR/Config/niri" "$XDG_CONFIG_HOME"
+			ln -sf "$BASE_DIR/Config/waybar" "$XDG_CONFIG_HOME"
+			ln -sf "$BASE_DIR/Config/foot" "$XDG_CONFIG_HOME"
+			ln -sf "$BASE_DIR/Config/swaylock" "$XDG_CONFIG_HOME"
+		fi
+
+		ln -sf "$BASE_DIR/Config/fastfetch" "$XDG_CONFIG_HOME"
+	fi
 }
 
 setup_claude_code() {
-    curl -fsSL https://claude.ai/install.sh | bash
-    curl -fsSL https://bun.sh/install | bash
+	curl -fsSL https://claude.ai/install.sh | bash
+	curl -fsSL https://bun.sh/install | bash
 
-    git clone https://github.com/sysprog21/zhtw-mcp.git
-    pushd zhtw-mcp || exit
-    make
-    claude mcp add --scope user zhtw-mcp -- target/release/zhtw-mcp
-    popd || exit
+	[[ ! -d zhtw-mcp ]] && git clone https://github.com/sysprog21/zhtw-mcp.git || git -C zhtw-mcp pull
+	pushd zhtw-mcp || exit
+	make
+	claude mcp add --scope user zhtw-mcp -- target/release/zhtw-mcp
+	popd || exit
 
-    git clone -b main https://github.com/kingkongshot/Pensieve.git .claude/skills/pensieve
-    bash .claude/skills/pensieve/.src/scripts/init-project-data.sh
-    claude plugin marketplace add kingkongshot/Pensieve#claude-plugin
-    claude plugin install pensieve@kingkongshot-marketplace --scope user
-    ln -sf "$BASE_DIR/Config/claude/"* ~/.claude/
+	ln -sf "$BASE_DIR/Config/claude/"* ~/.claude
+
+	git clone -b main https://github.com/kingkongshot/Pensieve.git .claude/skills/pensieve
+	bash .claude/skills/pensieve/.src/scripts/init-project-data.sh
+	claude plugin marketplace add kingkongshot/Pensieve#claude-plugin
+	claude plugin install pensieve@kingkongshot-marketplace --scope user
 }
 
 apply_crontab() {
-    crontab <(cat /dev/null)
-    crontab "$BASE_DIR/Config/crontab"
+	crontab <(cat /dev/null)
+	crontab "$BASE_DIR/Config/crontab"
 }
 
 check_dotfile() {
-    BASE_DIR="${1:-$HOME}"
-    if [[ ! -d $BASE_DIR/Config ]]; then
-        BASE_DIR=$HOME/.dotfile
-        git clone https://github.com/c8763yee/yadm_dotfile "$BASE_DIR"
-        git -C "$BASE_DIR" submodule update --init
-    fi
-    yadm submodule update --init
+	BASE_DIR="${1:-$HOME}"
+	if [[ ! -d $BASE_DIR/Config ]]; then
+		BASE_DIR=$HOME/.dotfile
+		git clone https://github.com/c8763yee/yadm_dotfile "$BASE_DIR"
+		git -C "$BASE_DIR" submodule update --init
+	fi
+	yadm submodule update --init
 }
 
 move_exec() {
@@ -200,33 +337,33 @@ move_exec() {
 	sudo cp -r $BASE_DIR/Exec/root/* /usr/bin
 }
 main() {
-    local class
-    class=$(yadm config local.class 2>/dev/null || echo "Base")
+	local class
+	class=$(yadm config local.class 2>/dev/null || echo "Base")
 
-    check_dotfile "$1"
-    setup_claude_code
-    install_required_packages
-    install_wm_packages "$class"
-    install_oh_my_tmux
-    setup_zsh
-    move_config "$class"
-    apply_crontab
-    move_exec
+	check_dotfile "$1"
+	setup_claude_code
+	install_required_packages
+	install_wm_packages "$class"
+	install_oh_my_tmux
+	setup_zsh
+	move_config "$class"
+	apply_crontab
+	move_exec
 }
 
 is_sourced() {
-    if [ -n "$BASH_VERSION" ]; then
-        [[ "${BASH_SOURCE[0]}" != "${0}" ]]
-    elif [ -n "$ZSH_VERSION" ]; then
-        [[ "$zsh_eval_context" == *file* ]]
-    else
-        [[ "$0" == *"sh" ]]
-    fi
+	if [ -n "$BASH_VERSION" ]; then
+		[[ "${BASH_SOURCE[0]}" != "${0}" ]]
+	elif [ -n "$ZSH_VERSION" ]; then
+		[[ "$zsh_eval_context" == *file* ]]
+	else
+		[[ "$0" == *"sh" ]]
+	fi
 }
 
 if is_sourced; then
-    echo "$0 sourced"
+	echo "$0 sourced"
 else
-    main "$@"
+	main "$@"
 fi
 echo Done
