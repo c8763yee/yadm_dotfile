@@ -1,0 +1,12 @@
+# ~/.config/systemd/user/power-monitor.service
+[Unit]
+Description=Power monitor (CPU/GPU watts for waybar)
+
+[Service]
+Type=simple
+ExecStart=/home/c8763yee/Config/waybar/scripts/power_daemon.sh
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

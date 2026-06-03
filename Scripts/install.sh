@@ -337,6 +337,33 @@ move_exec() {
 	cp -r $BASE_DIR/Exec/user/* $HOME/.local/bin
 	sudo cp -r $BASE_DIR/Exec/root/* /usr/bin
 }
+
+# 安裝 systemd unit：Service/user -> 使用者層，Service/root -> 系統層，並 enable
+install_services() {
+	local user_dir="$BASE_DIR/Service/user"
+	local root_dir="$BASE_DIR/Service/root"
+
+	if compgen -G "$user_dir/*.service" >/dev/null 2>&1 ||
+		compgen -G "$user_dir/*.timer" >/dev/null 2>&1 ||
+		compgen -G "$user_dir/*.socket" >/dev/null 2>&1; then
+		mkdir -p "$XDG_CONFIG_HOME/systemd/user"
+		cp "$user_dir"/*.{service,timer,socket} "$XDG_CONFIG_HOME/systemd/user/" 2>/dev/null
+		systemctl --user daemon-reload
+		for unit in "$user_dir"/*.{service,timer,socket}; do
+			[[ -e $unit ]] && systemctl --user enable --now "$(basename "$unit")"
+		done
+	fi
+
+	if compgen -G "$root_dir/*.service" >/dev/null 2>&1 ||
+		compgen -G "$root_dir/*.timer" >/dev/null 2>&1 ||
+		compgen -G "$root_dir/*.socket" >/dev/null 2>&1; then
+		sudo cp "$root_dir"/*.{service,timer,socket} /etc/systemd/system/ 2>/dev/null
+		sudo systemctl daemon-reload
+		for unit in "$root_dir"/*.{service,timer,socket}; do
+			[[ -e $unit ]] && sudo systemctl enable --now "$(basename "$unit")"
+		done
+	fi
+}
 main() {
 	local class
 	class=$(yadm config local.class 2>/dev/null || echo "Base")
@@ -350,6 +377,7 @@ main() {
 	move_config "$class"
 	apply_crontab
 	move_exec
+	install_services
 }
 
 is_sourced() {
