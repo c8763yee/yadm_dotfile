@@ -285,6 +285,7 @@ move_config() {
 		inject_waybar_powerdraw
 
 		ln -sf "$BASE_DIR/Config/hypr/userprefs.conf" "$XDG_CONFIG_HOME/hypr/userprefs.conf"
+		ln -sf "$BASE_DIR/Config/hypr/custom" "$XDG_CONFIG_HOME/hypr"
 	else
 		if [[ $class == "Niri" ]]; then
 			ln -sf "$BASE_DIR/Config/niri" "$XDG_CONFIG_HOME"
