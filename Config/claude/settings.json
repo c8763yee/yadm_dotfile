@@ -1,0 +1,31 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "bunx -y ccstatusline@latest",
+    "padding": 0,
+    "refreshInterval": 10
+  },
+  "enabledPlugins": {
+    "pensieve@kingkongshot-marketplace": true,
+    "pua@pua-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "kingkongshot-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "kingkongshot/Pensieve",
+        "ref": "claude-plugin"
+      }
+    },
+    "pua-skills": {
+      "source": {
+        "source": "github",
+        "repo": "tanweai/pua"
+      }
+    }
+  },
+  "language": "#zh-TW",
+  "effortLevel": "medium",
+  "agentPushNotifEnabled": true,
+  "tui": "fullscreen"
+}

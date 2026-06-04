@@ -163,6 +163,7 @@ move_config() {
 
 setup_claude_code() {
     curl -fsSL https://claude.ai/install.sh | bash
+    curl -fsSL https://bun.sh/install | bash
 
     git clone https://github.com/sysprog21/zhtw-mcp.git
     pushd zhtw-mcp || exit
@@ -174,7 +175,7 @@ setup_claude_code() {
     bash .claude/skills/pensieve/.src/scripts/init-project-data.sh
     claude plugin marketplace add kingkongshot/Pensieve#claude-plugin
     claude plugin install pensieve@kingkongshot-marketplace --scope user
-    cp -r "$BASE_DIR/Config/claude/"* ~/.claude
+    ln -sf "$BASE_DIR/Config/claude/"* ~/.claude/
 }
 
 apply_crontab() {
