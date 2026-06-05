@@ -282,6 +282,7 @@ move_config() {
 		mkdir -p "$XDG_CONFIG_HOME/waybar/modules" "$XDG_CONFIG_HOME/waybar/scripts"
 		ln -sf "$BASE_DIR/Config/waybar/custom-powerdraw.jsonc" "$XDG_CONFIG_HOME/waybar/modules/"
 		ln -sf "$BASE_DIR/Config/waybar/scripts/get_power.sh" "$XDG_CONFIG_HOME/waybar/scripts/"
+		ln -sf "$BASE_DIR/Config/waybar/scripts/power_daemon.sh" "$XDG_CONFIG_HOME/waybar/scripts/"
 		inject_waybar_powerdraw
 
 		ln -sf "$BASE_DIR/Config/hypr/userprefs.conf" "$XDG_CONFIG_HOME/hypr/userprefs.conf"
