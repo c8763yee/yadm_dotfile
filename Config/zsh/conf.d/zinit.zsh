@@ -16,6 +16,7 @@ zinit light zsh-users/zsh-autosuggestions
 zinit light zsh-users/zsh-completions
 zinit light zsh-users/zsh-history-substring-search
 zinit light zdharma-continuum/fast-syntax-highlighting
+zinit light Aloxaf/fzf-tab
 
 zinit ice depth=1; zinit light romkatv/powerlevel10k
 
@@ -43,3 +44,4 @@ bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
 
 zinit load djui/alias-tips
+
