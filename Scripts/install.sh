@@ -262,7 +262,7 @@ setup_zsh() {
 		# zsh: 依 HyDE conf.d 進入點慣例，連入會遞迴 source repo conf.d 的進入點
 		mkdir -p "$XDG_CONFIG_HOME/zsh/conf.d"
 		ln -sf "$BASE_DIR/Config/zsh/.zshenv" "$XDG_CONFIG_HOME/zsh/conf.d/custom.zsh"
-		sed -i 's/return 1//' "$XDG_CONFIG_HOME/zsh/plugin.zsh"
+		[[ -f "$XDG_CONFIG_HOME/zsh/plugin.zsh" ]] && sed -i 's/return 1//' "$XDG_CONFIG_HOME/zsh/plugin.zsh"
 	else
 
 		ln -sf "$BASE_DIR/Config/zsh" "$XDG_CONFIG_HOME"
