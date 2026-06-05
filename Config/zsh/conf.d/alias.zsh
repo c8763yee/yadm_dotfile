@@ -25,3 +25,6 @@ alias sru='systemctl --user'
 #virsh qemu aliases
 alias vr='virsh -c qemu:///system'
 alias vls='virsh -c qemu:///system list'
+
+# git alias
+(( $+aliases[gh] )) && unalias gh
