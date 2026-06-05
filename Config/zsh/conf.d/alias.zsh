@@ -27,4 +27,4 @@ alias vr='virsh -c qemu:///system'
 alias vls='virsh -c qemu:///system list'
 
 # git alias
-unalias gh
+(( $+aliases[gh] )) && unalias gh
