@@ -12,12 +12,20 @@ autoload -Uz _zinit
 (( ${+_comps} )) && _comps[zinit]=_zinit
 
 # Load plugins and themes
-zinit light zsh-users/zsh-autosuggestions
-zinit light zsh-users/zsh-completions
-zinit light zsh-users/zsh-history-substring-search
-zinit light zdharma-continuum/fast-syntax-highlighting
-zinit light Aloxaf/fzf-tab
+# Turbo mode: defer sourcing until after prompt draw so plugins load
+# asynchronously in parallel. fast-syntax-highlighting must come last to
+# wrap widgets defined by the earlier plugins.
+zinit wait lucid light-mode for \
+    atload"!_zsh_autosuggest_start" \
+        zsh-users/zsh-autosuggestions \
+    blockf \
+        zsh-users/zsh-completions \
+    atload'bindkey "^[[A" history-substring-search-up; bindkey "^[[B" history-substring-search-down' \
+        zsh-users/zsh-history-substring-search \
+    Aloxaf/fzf-tab \
+    zdharma-continuum/fast-syntax-highlighting
 
+# Prompt theme stays synchronous: turbo-loading it breaks p10k instant prompt.
 zinit ice depth=1; zinit light romkatv/powerlevel10k
 
 # oh-my-zsh snippets
@@ -33,15 +41,15 @@ zinit snippet OMZL::key-bindings.zsh
 zinit snippet OMZL::theme-and-appearance.zsh
 zinit snippet OMZL::directories.zsh
 
-plugins=(git vim-interaction pipenv pip aliases docker docker-compose poetry git-commit git-auto-fetch ssh sudo github git-hubflow git-lfs alias-finder uv colored-man-pages gh history postgres ssh-agent supervisor tmux themes vscode wakeonlan)
-for plugin in "${plugins[@]}"; do
-    # Turbo mode: defer sourcing until after prompt draw for faster startup.
-    zinit ice wait"1" lucid reset
-    zinit snippet "OMZP::${plugin}"
-done
+# Turbo mode: queue all OMZ plugins in one batch so they source
+# asynchronously in parallel after the prompt is drawn.
+zinit wait"1" lucid reset for \
+    OMZP::git OMZP::vim-interaction OMZP::pipenv OMZP::pip OMZP::aliases \
+    OMZP::docker OMZP::docker-compose OMZP::poetry OMZP::git-commit \
+    OMZP::git-auto-fetch OMZP::ssh OMZP::sudo OMZP::github OMZP::git-hubflow \
+    OMZP::git-lfs OMZP::alias-finder OMZP::uv OMZP::colored-man-pages OMZP::gh \
+    OMZP::history OMZP::postgres OMZP::ssh-agent OMZP::supervisor OMZP::tmux \
+    OMZP::themes OMZP::vscode OMZP::wakeonlan
 
-bindkey '^[[A' history-substring-search-up
-bindkey '^[[B' history-substring-search-down
-
-zinit load djui/alias-tips
+zinit wait lucid light-mode for djui/alias-tips
 
