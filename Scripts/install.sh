@@ -317,6 +317,11 @@ setup_claude_code() {
 	claude plugin install pensieve@kingkongshot-marketplace --scope user
 }
 
+setup_codex() {
+	mkdir -p "$HOME/.codex"
+	ln -sf "$BASE_DIR/Config/codex/AGENTS.md" "$HOME/.codex/AGENTS.md"
+}
+
 apply_crontab() {
 	crontab <(cat /dev/null)
 	crontab "$BASE_DIR/Config/crontab"
@@ -371,6 +376,7 @@ main() {
 
 	check_dotfile "$1"
 	setup_claude_code
+	setup_codex
 	install_required_packages
 	install_wm_packages "$class"
 	install_oh_my_tmux
