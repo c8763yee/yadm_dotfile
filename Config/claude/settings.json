@@ -7,7 +7,8 @@
   },
   "enabledPlugins": {
     "pensieve@kingkongshot-marketplace": true,
-    "pua@pua-skills": true
+    "pua@pua-skills": true,
+    "codex@openai-codex": true
   },
   "extraKnownMarketplaces": {
     "kingkongshot-marketplace": {
@@ -22,10 +23,16 @@
         "source": "github",
         "repo": "tanweai/pua"
       }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
     }
   },
   "language": "#zh-TW",
   "effortLevel": "medium",
-  "agentPushNotifEnabled": true,
-  "tui": "fullscreen"
+  "tui": "fullscreen",
+  "agentPushNotifEnabled": true
 }
