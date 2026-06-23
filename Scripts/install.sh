@@ -323,8 +323,34 @@ setup_codex() {
 }
 
 apply_crontab() {
-	crontab <(cat /dev/null)
-	crontab "$BASE_DIR/Config/crontab"
+	local desired="$BASE_DIR/Config/crontab"
+	local current merged
+	local begin="# >>> dotfile managed crontab >>>"
+	local end="# <<< dotfile managed crontab <<<"
+
+	[[ -f $desired ]] || return
+	current=$(mktemp) || return 1
+	merged=$(mktemp) || {
+		rm -f "$current"
+		return 1
+	}
+
+	crontab -l 2>/dev/null >"$current" || :
+	awk -v begin="$begin" -v end="$end" '
+		NR == FNR { desired[$0] = 1; next }
+		$0 == begin { managed = 1; next }
+		managed && $0 == end { managed = 0; next }
+		!managed && !desired[$0] { print }
+	' "$desired" "$current" >"$merged"
+	{
+		cat "$merged"
+		printf '%s\n' "$begin"
+		cat "$desired"
+		printf '%s\n' "$end"
+	} | crontab -
+	local status=${PIPESTATUS[1]}
+	rm -f "$current" "$merged"
+	return "$status"
 }
 
 check_dotfile() {
