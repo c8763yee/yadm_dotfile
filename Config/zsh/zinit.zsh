@@ -25,9 +25,6 @@ zinit wait lucid light-mode for \
     Aloxaf/fzf-tab \
     zdharma-continuum/fast-syntax-highlighting
 
-# Prompt theme stays synchronous: turbo-loading it breaks p10k instant prompt.
-zinit ice depth=1; zinit light romkatv/powerlevel10k
-
 # oh-my-zsh snippets
 # Must Load OMZ Git library
 zi snippet OMZL::git.zsh
@@ -52,4 +49,3 @@ zinit wait"1" lucid reset for \
     OMZP::themes OMZP::vscode OMZP::wakeonlan
 
 zinit wait lucid light-mode for djui/alias-tips
-

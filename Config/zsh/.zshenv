@@ -1,7 +1,8 @@
 #!/usr/bin/env zsh
-# for file in "${0:A:h}/conf.d/"**/*.zsh(N); do
-for file in "${${(%):-%N}:A:h}/conf.d/"**/*.zsh(N); do
+
+custom_dir="$HOME/Config/zsh/conf.d"
+for file in "$custom_dir"/**/*.zsh(N); do
+  [[ $file == */autocompletion/* ]] && (( ! $+functions[compdef] )) && continue
   [ -r "$file" ] && source "$file"
 done
-autoload -Uz compinit
-compinit
+unset custom_dir file
