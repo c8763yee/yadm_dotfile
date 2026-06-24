@@ -257,17 +257,14 @@ install_oh_my_tmux() {
 setup_zsh() {
 	[[ $SHELL != *zsh* ]] && chsh -s "$(which zsh)"
 
-	local class="$1"
-	if [[ $class == "Hyprland" ]]; then
-		# zsh: 依 HyDE conf.d 進入點慣例，連入會遞迴 source repo conf.d 的進入點
-		mkdir -p "$XDG_CONFIG_HOME/zsh/conf.d"
+	# HyDE 的 00-hyde.zsh 是其 conf.d 載入鏈的明確標記；其餘 DE 使用
+	# repository 的完整 Zsh 設定。
+	if [[ -f "$XDG_CONFIG_HOME/zsh/conf.d/00-hyde.zsh" ]]; then
 		ln -sf "$BASE_DIR/Config/zsh/.zshenv" "$XDG_CONFIG_HOME/zsh/conf.d/custom.zsh"
 		[[ -f "$XDG_CONFIG_HOME/zsh/plugin.zsh" ]] && sed -i 's/return 1//' "$XDG_CONFIG_HOME/zsh/plugin.zsh"
 	else
-
 		ln -sf "$BASE_DIR/Config/zsh" "$XDG_CONFIG_HOME"
 	fi
-
 }
 
 move_config() {
