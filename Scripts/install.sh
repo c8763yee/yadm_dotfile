@@ -23,7 +23,7 @@ pkg_install() {
 	arch) sudo pacman -S --noconfirm --needed "$@" ;;
 	msys2) pacman -S --noconfirm "$@" ;;
 	debian | ubuntu | raspbian) sudo apt install -y "$@" ;;
-	fedora) sudo dnf install -y "$@" ;;
+	fedora) sudo dnf install -y --skip-unavailable "$@" ;;
 	esac
 }
 
