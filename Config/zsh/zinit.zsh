@@ -12,6 +12,9 @@ autoload -Uz _zinit
 (( ${+_comps} )) && _comps[zinit]=_zinit
 
 # Load plugins and themes
+zinit ice depth=1
+zinit light romkatv/powerlevel10k
+
 # Turbo mode: defer sourcing until after prompt draw so plugins load
 # asynchronously in parallel. fast-syntax-highlighting must come last to
 # wrap widgets defined by the earlier plugins.
