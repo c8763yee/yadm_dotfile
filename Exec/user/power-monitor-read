@@ -1,0 +1,5 @@
+#!/bin/bash
+# Stateless reader: every consumer gets the same daemon-produced snapshot.
+OUT="${XDG_RUNTIME_DIR:-/tmp}/power_draw.json"
+cat "$OUT" 2>/dev/null \
+	|| echo '{"cpu":"","gpu":"","text":"CPU: N/A | GPU: N/A","tooltip":"CPU: N/A\nGPU: N/A"}'

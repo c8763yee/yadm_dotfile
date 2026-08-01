@@ -32,7 +32,7 @@
       "mcp__zhtw-mcp__zhtw"
     ]
   },
-  "model": "sonnet",
+  "model": "opus[1m]",
   "statusLine": {
     "type": "command",
     "command": "bunx -y ccstatusline@latest",
@@ -68,6 +68,7 @@
   "language": "#zh-TW",
   "effortLevel": "medium",
   "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
   "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true

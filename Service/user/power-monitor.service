@@ -1,10 +1,10 @@
 # ~/.config/systemd/user/power-monitor.service
 [Unit]
-Description=Power monitor (CPU/GPU watts for waybar)
+Description=CPU/GPU power monitor
 
 [Service]
 Type=simple
-ExecStart=%h/.config/waybar/scripts/power_daemon.sh
+ExecStart=%h/.local/bin/power-monitor-daemon
 Restart=on-failure
 RestartSec=2
 

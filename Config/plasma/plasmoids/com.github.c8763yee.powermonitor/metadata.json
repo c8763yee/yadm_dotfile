@@ -1,0 +1,25 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "c8763yee"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "Displays the current CPU and GPU power draw",
+        "Description[zh_TW]": "顯示目前的 CPU 與 GPU 功耗",
+        "EnabledByDefault": true,
+        "FormFactors": [
+            "desktop",
+            "horizontal",
+            "vertical"
+        ],
+        "Icon": "battery-profile",
+        "Id": "com.github.c8763yee.powermonitor",
+        "License": "GPL-2.0-or-later",
+        "Name": "CPU/GPU Power Monitor",
+        "Name[zh_TW]": "CPU／GPU 功耗監控"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

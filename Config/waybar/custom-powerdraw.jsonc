@@ -1,7 +1,7 @@
 {
   "custom/powerdraw": {
     "format": "⚡ {}",
-    "exec": "~/.config/waybar/scripts/get_power.sh",
+    "exec": "~/.local/bin/power-monitor-read",
     "return-type": "json",
     "interval": 1
   }

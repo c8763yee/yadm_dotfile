@@ -1,0 +1,25 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "c8763yee"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "Lists GRUB entries and reboots into the selected entry",
+        "Description[zh_TW]": "列出 GRUB 項目並重新啟動至選定項目",
+        "EnabledByDefault": true,
+        "FormFactors": [
+            "desktop",
+            "horizontal",
+            "vertical"
+        ],
+        "Icon": "system-reboot",
+        "Id": "com.github.c8763yee.grubreboot",
+        "License": "GPL-2.0-or-later",
+        "Name": "GRUB Reboot",
+        "Name[zh_TW]": "GRUB 重新啟動"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

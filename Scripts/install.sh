@@ -20,7 +20,7 @@ pkg_update() {
 
 pkg_install() {
 	case "$DISTRO" in
-	arch) sudo pacman -S --noconfirm --needed "$@" ;;
+	arch) sudo pacman -S --noconfirm --needed "$@" --overwrite "*";;
 	msys2) pacman -S --noconfirm "$@" ;;
 	debian | ubuntu | raspbian) sudo apt install -y "$@" ;;
 	fedora) sudo dnf install -y --skip-unavailable "$@" ;;
@@ -290,6 +290,18 @@ move_config() {
 			ln -sf "$BASE_DIR/Config/waybar" "$XDG_CONFIG_HOME"
 			ln -sf "$BASE_DIR/Config/foot" "$XDG_CONFIG_HOME"
 			ln -sf "$BASE_DIR/Config/swaylock" "$XDG_CONFIG_HOME"
+		fi
+		if [[ $class == "Kde" ]]; then
+			local plasmoid plugin_id
+			for plasmoid in "$BASE_DIR/Config/plasma/plasmoids"/*; do
+				[[ -f $plasmoid/metadata.json ]] || continue
+				plugin_id=$(basename "$plasmoid")
+				if kpackagetool6 --type Plasma/Applet --show "$plugin_id" >/dev/null 2>&1; then
+					kpackagetool6 --type Plasma/Applet --upgrade "$plasmoid"
+				else
+					kpackagetool6 --type Plasma/Applet --install "$plasmoid"
+				fi
+			done
 		fi
 
 		ln -sf "$BASE_DIR/Config/fastfetch" "$XDG_CONFIG_HOME"
