@@ -92,14 +92,66 @@ install_required_packages() {
 
 install_hyde() {
 	local hyde_dir="$BASE_DIR/HyDE"
+	local zshenv_backup=""
+	local install_status=0
+
+	if [[ -f $BASE_DIR/.zshenv ]]; then
+		zshenv_backup=$(mktemp) || return 1
+		cp -p "$BASE_DIR/.zshenv" "$zshenv_backup" || {
+			rm -f "$zshenv_backup"
+			return 1
+		}
+	fi
+
 	if [[ ! -d $hyde_dir ]]; then
 		# 首次：完整安裝 (預設等同 -irs：install + restore + service)
-		git clone --depth 1 https://github.com/HyDE-Project/HyDE "$hyde_dir"
-		bash "$hyde_dir/Scripts/install.sh"
+		git clone --depth 1 https://github.com/HyDE-Project/HyDE "$hyde_dir" || install_status=$?
+		(( install_status == 0 )) && bash "$hyde_dir/Scripts/install.sh" || install_status=$?
 	else
 		# 更新：拉取最新並只還原設定 (-r restore)
-		git -C "$hyde_dir" pull
-		bash "$hyde_dir/Scripts/install.sh" -r
+		git -C "$hyde_dir" pull || install_status=$?
+		(( install_status == 0 )) && bash "$hyde_dir/Scripts/install.sh" -r || install_status=$?
+	fi
+
+	if [[ -n $zshenv_backup ]]; then
+		cp -p "$zshenv_backup" "$BASE_DIR/.zshenv" || install_status=$?
+		rm -f "$zshenv_backup"
+	fi
+	return "$install_status"
+}
+
+prepare_zsh_layout() {
+	local class="$1"
+	local zsh_dir="$XDG_CONFIG_HOME/zsh"
+	local hyde_dir="$XDG_CONFIG_HOME/zsh.hyde"
+	local repo_dir="$BASE_DIR/Config/zsh"
+	local link_target
+
+	[[ $class != "Hyprland" ]] && return
+	mkdir -p "$XDG_CONFIG_HOME"
+
+	if [[ -L $zsh_dir ]]; then
+		link_target=$(readlink -f -- "$zsh_dir")
+		if [[ $link_target != "$(readlink -f -- "$repo_dir")" ]]; then
+			echo "拒絕替換未知的 Zsh 連結：$zsh_dir -> $link_target" >&2
+			return 1
+		fi
+		unlink "$zsh_dir"
+	fi
+
+	if [[ ! -e $zsh_dir && -d $hyde_dir ]]; then
+		mv "$hyde_dir" "$zsh_dir"
+	fi
+
+	if [[ -e $zsh_dir && ! -d $zsh_dir ]]; then
+		echo "Zsh 設定路徑不是目錄：$zsh_dir" >&2
+		return 1
+	fi
+
+	if [[ -d $zsh_dir && ! -f $zsh_dir/conf.d/00-hyde.zsh ]] &&
+		[[ -n $(find "$zsh_dir" -mindepth 1 -print -quit) ]]; then
+		echo "拒絕使用來源不明的 Zsh 目錄：$zsh_dir" >&2
+		return 1
 	fi
 }
 
@@ -226,7 +278,7 @@ install_wm_packages() {
 		rustup install stable
 		sudo cp /etc/xdg/menus/arch-applications.menu /etc/xdg/menus/applications.menu
 		kbuildsycoca6 --noincremental
-		install_hyde
+		install_hyde || return 1
 		;;
 	Kde)
 		install_packages "$wm_txt"
@@ -243,6 +295,7 @@ install_wm_packages() {
 		sudo systemctl enable --now cronie
 		;;
 	esac
+	return 0
 }
 
 install_oh_my_tmux() {
@@ -255,16 +308,63 @@ install_oh_my_tmux() {
 }
 
 setup_zsh() {
-	[[ $SHELL != *zsh* ]] && chsh -s "$(which zsh)"
+	local class="$1"
+	local zsh_dir="$XDG_CONFIG_HOME/zsh"
+	local hyde_dir="$XDG_CONFIG_HOME/zsh.hyde"
+	local repo_dir="$BASE_DIR/Config/zsh"
+	local custom_zsh="$zsh_dir/conf.d/custom.zsh"
+	local link_target
 
-	# HyDE 的 00-hyde.zsh 是其 conf.d 載入鏈的明確標記；其餘 DE 使用
-	# repository 的完整 Zsh 設定。
-	if [[ -f "$XDG_CONFIG_HOME/zsh/conf.d/00-hyde.zsh" ]]; then
-		ln -sf "$BASE_DIR/Config/zsh/.zshenv" "$XDG_CONFIG_HOME/zsh/conf.d/custom.zsh"
-		[[ -f "$XDG_CONFIG_HOME/zsh/plugin.zsh" ]] && sed -i 's/return 1//' "$XDG_CONFIG_HOME/zsh/plugin.zsh"
-	else
-		ln -sf "$BASE_DIR/Config/zsh" "$XDG_CONFIG_HOME"
-	fi
+	[[ $SHELL != *zsh* ]] && chsh -s "$(which zsh)"
+	mkdir -p "$XDG_CONFIG_HOME"
+
+	case "$class" in
+	Hyprland)
+		if [[ -L $zsh_dir || ! -f $zsh_dir/conf.d/00-hyde.zsh ]]; then
+			echo "HyDE Zsh 設定不存在或尚未完成：$zsh_dir" >&2
+			return 1
+		fi
+		if [[ -L $custom_zsh ]]; then
+			link_target=$(readlink -f -- "$custom_zsh")
+			if [[ $link_target != "$(readlink -f -- "$repo_dir/.zshenv")" ]]; then
+				echo "拒絕替換未知的 custom.zsh 連結：$custom_zsh -> $link_target" >&2
+				return 1
+			fi
+		elif [[ -e $custom_zsh ]]; then
+			echo "拒絕覆寫既有的 custom.zsh：$custom_zsh" >&2
+			return 1
+		else
+			ln -s "$repo_dir/.zshenv" "$custom_zsh"
+		fi
+		[[ -f $zsh_dir/plugin.zsh ]] && sed -i 's/return 1//' "$zsh_dir/plugin.zsh"
+		;;
+	*)
+		if [[ -L $zsh_dir ]]; then
+			link_target=$(readlink -f -- "$zsh_dir")
+			if [[ $link_target == "$(readlink -f -- "$repo_dir")" ]]; then
+				return
+			fi
+			echo "拒絕替換未知的 Zsh 連結：$zsh_dir -> $link_target" >&2
+			return 1
+		fi
+		if [[ -d $zsh_dir ]]; then
+			if [[ ! -f $zsh_dir/conf.d/00-hyde.zsh ]]; then
+				echo "拒絕移動來源不明的 Zsh 目錄：$zsh_dir" >&2
+				return 1
+			fi
+			if [[ -e $hyde_dir ]]; then
+				echo "HyDE Zsh 備份已存在：$hyde_dir" >&2
+				return 1
+			fi
+			mv "$zsh_dir" "$hyde_dir"
+		elif [[ -e $zsh_dir ]]; then
+			echo "Zsh 設定路徑不是目錄：$zsh_dir" >&2
+			return 1
+		fi
+		ln -s "$repo_dir" "$zsh_dir"
+		;;
+	esac
+	return 0
 }
 
 move_config() {
@@ -413,9 +513,10 @@ main() {
 	setup_claude_code
 	setup_codex
 	install_required_packages
-	install_wm_packages "$class"
+	prepare_zsh_layout "$class" || exit 1
+	install_wm_packages "$class" || exit 1
 	install_oh_my_tmux
-	setup_zsh
+	setup_zsh "$class" || exit 1
 	move_config "$class"
 	apply_crontab
 	move_exec
