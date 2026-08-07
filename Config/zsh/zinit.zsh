@@ -11,6 +11,11 @@ source "$HOME/.local/share/zinit/zinit.git/zinit.zsh"
 autoload -Uz _zinit
 (( ${+_comps} )) && _comps[zinit]=_zinit
 
+# Initialize Zsh's completion system. Fedora's _dnf5 completion uses
+# `dnf5 --complete` to search package names from enabled repositories.
+autoload -Uz compinit
+compinit -d "${ZDOTDIR:-$HOME}/.zcompdump"
+
 # Load plugins and themes
 zinit ice depth=1
 zinit light romkatv/powerlevel10k
