@@ -32,7 +32,7 @@
       "mcp__zhtw-mcp__zhtw"
     ]
   },
-  "model": "opus[1m]",
+  "model": "opus",
   "statusLine": {
     "type": "command",
     "command": "bunx -y ccstatusline@latest",
@@ -42,7 +42,8 @@
   "enabledPlugins": {
     "pensieve@kingkongshot-marketplace": true,
     "pua@pua-skills": true,
-    "codex@openai-codex": true
+    "codex@openai-codex": true,
+    "rust-analyzer-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "kingkongshot-marketplace": {
@@ -67,8 +68,18 @@
   },
   "language": "#zh-TW",
   "effortLevel": "medium",
+  "modelSettings": {
+    "claude-sonnet-5": {
+      "effortLevel": "low"
+    },
+    "claude-opus-5": {
+      "effortLevel": "high"
+    }
+  },
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
+  "theme": "dark",
+  "switchModelsOnFlag": false,
   "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true
