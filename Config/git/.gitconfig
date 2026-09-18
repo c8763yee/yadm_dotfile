@@ -3,6 +3,7 @@
 	bug = "log -n 1 --pretty=fixes"
 	kernel = "log -n 1 --pretty=commit"
 	log-merge = "!f() { git log --oneline --graph --stat \"$1^..$1\"; }; f"
+	ida = !cd \"${GIT_PREFIX:-.}\" && \"/home/c8763yee/ida-pro-9.4/tools/teams/git-ida\"
 
 [core]
 	abbrev = 12
@@ -30,7 +31,7 @@
 	fixes = "Fixes: %h (\"%s\")"
 
 [user]
-	email = rrrrr4413@gmail.com
+	email = mail@c8763yee.com
 	name = c8763yee
 
 [init]
