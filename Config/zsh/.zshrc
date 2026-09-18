@@ -15,7 +15,7 @@ fi
 
 if [[ -n $(command -v nvidia-smi 2> /dev/null) ]]; then
 	export PATH=/opt/cuda/bin:$PATH
-	export LD_LIBRARY_PATH=/opt/cuda/lib64:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+	export LD_LIBRARY_PATH=/opt/cuda/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 fi
 
 # If you come from bash you might have to change your $PATH.

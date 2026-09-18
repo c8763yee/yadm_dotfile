@@ -9,3 +9,4 @@ for file in "$custom_dir"/**/*.zsh(N); do
   [ -r "$file" ] && source "$file"
 done
 unset custom_dir file
+. "$HOME/.cargo/env"
