@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #ifndef GRUB_CFG
-#define GRUB_CFG "/boot/grub2/grub.cfg"
+#define GRUB_CFG "/boot/grub/grub.cfg"
 #endif
 
 typedef struct {
@@ -50,8 +50,8 @@ static void entry_list_add(EntryList *list, const char *title,
 {
 	Entry *entry;
 
-	list->items = xrealloc(list->items,
-			       (list->count + 1) * sizeof(*list->items));
+	list->items =
+		xrealloc(list->items, (list->count + 1) * sizeof(*list->items));
 	entry = &list->items[list->count++];
 	entry->title = xstrdup(title);
 	entry->target = xstrdup(target);
@@ -132,6 +132,15 @@ static const char *ltrim(const char *s)
 	return s;
 }
 
+static int is_grub_command(const char *line, const char *command)
+{
+	size_t length = strlen(command);
+
+	return strncmp(line, command, length) == 0 &&
+	       (isspace((unsigned char)line[length]) || line[length] == '\'' ||
+		line[length] == '\"');
+}
+
 static char *extract_title(const char *line)
 {
 	const char *start = strpbrk(line, "\"'");
@@ -180,7 +189,7 @@ static char *build_target(char **parents, size_t depth, const char *title)
 	return target;
 }
 
-static int parse_windows_entries(EntryList *list)
+static int parse_grub_cfg_entries(EntryList *list, int windows_only)
 {
 	FILE *fp = fopen(GRUB_CFG, "r");
 	char *line = NULL;
@@ -201,21 +210,23 @@ static int parse_windows_entries(EntryList *list)
 		int closes;
 
 		count_braces(trimmed, &opens, &closes);
-		if (strncmp(trimmed, "submenu", 7) == 0 && depth < 64) {
+		if (is_grub_command(trimmed, "submenu") && depth < 64) {
 			char *title = extract_title(trimmed);
 
 			if (title) {
 				parents[depth] = title;
 				submenu_brace_at[depth++] = brace_level + opens;
 			}
-		} else if (strncmp(trimmed, "menuentry", 9) == 0 &&
-			   (strstr(trimmed, "--class windows") ||
+		} else if (is_grub_command(trimmed, "menuentry") &&
+			   (!windows_only ||
+			    strstr(trimmed, "--class windows") ||
 			    strncasecmp(trimmed + 9, " 'Windows", 9) == 0 ||
 			    strncasecmp(trimmed + 9, " \"Windows", 9) == 0)) {
 			char *title = extract_title(trimmed);
 
 			if (title) {
-				char *target = build_target(parents, depth, title);
+				char *target =
+					build_target(parents, depth, title);
 
 				entry_list_add(list, title, target, depth);
 				free(target);
@@ -239,11 +250,21 @@ static void json_string(const char *value)
 	putchar('"');
 	for (const unsigned char *p = (const unsigned char *)value; *p; p++) {
 		switch (*p) {
-		case '"': fputs("\\\"", stdout); break;
-		case '\\': fputs("\\\\", stdout); break;
-		case '\n': fputs("\\n", stdout); break;
-		case '\r': fputs("\\r", stdout); break;
-		case '\t': fputs("\\t", stdout); break;
+		case '"':
+			fputs("\\\"", stdout);
+			break;
+		case '\\':
+			fputs("\\\\", stdout);
+			break;
+		case '\n':
+			fputs("\\n", stdout);
+			break;
+		case '\r':
+			fputs("\\r", stdout);
+			break;
+		case '\t':
+			fputs("\\t", stdout);
+			break;
 		default:
 			if (*p < 0x20)
 				printf("\\u%04x", *p);
@@ -270,6 +291,13 @@ static void print_json(const EntryList *list)
 		putchar('}');
 	}
 	puts("]");
+}
+
+static void print_menu(const EntryList *list)
+{
+	for (size_t i = 0; i < list->count; i++)
+		printf("%zu: %*s%s\n", i, (int)(list->items[i].depth * 2), "",
+		       list->items[i].title);
 }
 
 static int run_cmd(char *const argv[])
@@ -302,8 +330,12 @@ static int boot_entry(const Entry *entry)
 	printf("Setting next boot entry to: %s\n", entry->target);
 	rc = run_cmd(grub_reboot);
 	if (rc != 0) {
-		fprintf(stderr, "grub2-reboot failed (exit code %d)\n", rc);
-		return rc ? rc : EXIT_FAILURE;
+		grub_reboot[0] = "grub-reboot";
+		if ((rc = run_cmd(grub_reboot)) != 0) {
+			fprintf(stderr, "grub-reboot failed (exit code %d)\n",
+				rc);
+			return rc ? rc : EXIT_FAILURE;
+		}
 	}
 	fflush(stdout);
 	rc = run_cmd(reboot);
@@ -325,6 +357,40 @@ static int parse_index(const char *value, size_t count, size_t *index)
 	return 0;
 }
 
+static int select_entry(const EntryList *list, size_t *index)
+{
+	char *line = NULL;
+	size_t capacity = 0;
+	int rc = -1;
+
+	if (!list->count) {
+		fprintf(stderr, "No boot entries found.\n");
+		return -1;
+	}
+	print_menu(list);
+	printf("Select next boot entry [0-%zu]: ", list->count - 1);
+	fflush(stdout);
+	if (getline(&line, &capacity, stdin) == -1)
+		goto out;
+	line[strcspn(line, "\n")] = '\0';
+	if (parse_index(line, list->count, index) != 0)
+		fprintf(stderr, "Invalid entry index: %s\n", line);
+	else
+		rc = 0;
+out:
+	free(line);
+	return rc;
+}
+
+static int boot_index(const EntryList *list, size_t index)
+{
+	if (geteuid() != 0) {
+		fprintf(stderr, "Boot selection requires root privileges.\n");
+		return EXIT_FAILURE;
+	}
+	return boot_entry(&list->items[index]);
+}
+
 static void usage(const char *program)
 {
 	fprintf(stderr, "Usage: %s [--list | --boot INDEX]\n", program);
@@ -335,12 +401,30 @@ int main(int argc, char **argv)
 	EntryList entries = { 0 };
 	int rc = EXIT_SUCCESS;
 
-	if (parse_grubby_output(&entries) != 0 ||
-	    parse_windows_entries(&entries) != 0) {
-		rc = EXIT_FAILURE;
+	if (parse_grubby_output(&entries) == 0) {
+		if (parse_grub_cfg_entries(&entries, 1) != 0) {
+			rc = EXIT_FAILURE;
+			goto out;
+		}
+	} else {
+		entry_list_free(&entries);
+		entries = (EntryList){ 0 };
+		if (parse_grub_cfg_entries(&entries, 0) != 0) {
+			rc = EXIT_FAILURE;
+			goto out;
+		}
+	}
+	if (argc == 1) {
+		size_t index;
+
+		if (select_entry(&entries, &index) != 0) {
+			rc = EXIT_FAILURE;
+			goto out;
+		}
+		rc = boot_index(&entries, index);
 		goto out;
 	}
-	if (argc == 1 || argc == 2 && strcmp(argv[1], "--list") == 0) {
+	if (argc == 2 && strcmp(argv[1], "--list") == 0) {
 		print_json(&entries);
 		goto out;
 	}
@@ -352,15 +436,9 @@ int main(int argc, char **argv)
 			rc = EXIT_FAILURE;
 			goto out;
 		}
-		if (geteuid() != 0) {
-			fprintf(stderr, "Boot selection requires root privileges.\n");
-			rc = EXIT_FAILURE;
-			goto out;
-		}
-		rc = boot_entry(&entries.items[index]);
+		rc = boot_index(&entries, index);
 		goto out;
-	}
-	else{
+	} else {
 		usage(argv[0]);
 		rc = EXIT_FAILURE;
 	}
