@@ -61,7 +61,7 @@ jobs:
           "$vnc_bin" -s 127.0.0.1::5901 type "arch" key enter
           sleep 2
 
-          "$vnc_bin" -s 127.0.0.1::5901 type "sudo pacman -Sy --needed --noconfirm openssh yadm git" key enter
+          "$vnc_bin" -s 127.0.0.1::5901 type "sudo pacman -Sy --needed --noconfirm openssh" key enter
           sleep 2
           "$vnc_bin" -s 127.0.0.1::5901 type "arch" key enter
           sleep 15
@@ -82,10 +82,12 @@ jobs:
           done
           ssh_guest "echo SSH_READY"
 
-          printf '%s\n' arch 'arch ALL=(ALL) NOPASSWD: ALL' |
-            ssh_guest "sudo -S tee /etc/sudoers.d/arch-yadm-test >/dev/null"
+          ssh_guest "printf '%s\n' 'arch ALL=(ALL) NOPASSWD: ALL' >/tmp/arch-yadm-test"
           printf '%s\n' arch |
-            ssh_guest "sudo -S chmod 0440 /etc/sudoers.d/arch-yadm-test"
+            ssh_guest "sudo -S install -m 0440 /tmp/arch-yadm-test /etc/sudoers.d/arch-yadm-test"
+          ssh_guest "sudo -n true"
+          ssh_guest "sudo -n pacman -Sy --needed --noconfirm yadm git"
+          ssh_guest "command -v yadm && yadm --version"
           ssh_guest "yadm clone https://github.com/c8763yee/yadm_dotfile.git -b refactor/yadm-ownership --no-bootstrap"
           ssh_guest "yadm config local.class Hyprland && yadm alt"
 
