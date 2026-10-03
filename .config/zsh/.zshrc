@@ -5,10 +5,12 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-source "${ZDOTDIR:-$HOME/.config/zsh}/zinit.zsh"
+if (( ! $+functions[zinit] )); then
+  source "${ZDOTDIR:-$HOME/.config/zsh}/plugin.zsh"
+fi
 
 # PATH settings
-export PATH=/home/c8763yee/.local/bin${PATH:+:${PATH}}
+export PATH=$HOME/.local/bin${PATH:+:${PATH}}
 if [[ -n $(command -v snap 2> /dev/null) ]]; then
 	export PATH=/snap/bin:$PATH
 fi
@@ -51,4 +53,4 @@ fi
 
 
 # bun completions
-[ -s "/home/c8763yee/.bun/_bun" ] && source "/home/c8763yee/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"

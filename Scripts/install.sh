@@ -91,16 +91,7 @@ install_required_packages() {
 
 install_hyde() {
 	local hyde_dir="$BASE_DIR/HyDE"
-	local zshenv_backup=""
 	local install_status=0
-
-	if [[ -f $BASE_DIR/.zshenv ]]; then
-		zshenv_backup=$(mktemp) || return 1
-		cp -p "$BASE_DIR/.zshenv" "$zshenv_backup" || {
-			rm -f "$zshenv_backup"
-			return 1
-		}
-	fi
 
 	if [[ ! -d $hyde_dir ]]; then
 		# 首次：完整安裝 (預設等同 -irs：install + restore + service)
@@ -112,46 +103,7 @@ install_hyde() {
 		(( install_status == 0 )) && bash "$hyde_dir/Scripts/install.sh" -r || install_status=$?
 	fi
 
-	if [[ -n $zshenv_backup ]]; then
-		cp -p "$zshenv_backup" "$BASE_DIR/.zshenv" || install_status=$?
-		rm -f "$zshenv_backup"
-	fi
 	return "$install_status"
-}
-
-prepare_zsh_layout() {
-	local class="$1"
-	local zsh_dir="$XDG_CONFIG_HOME/zsh"
-	local hyde_dir="$XDG_CONFIG_HOME/zsh.hyde"
-	local repo_dir="$BASE_DIR/Config/zsh"
-	local link_target
-
-	[[ $class != "Hyprland" ]] && return
-	mkdir -p "$XDG_CONFIG_HOME"
-
-	if [[ -L $zsh_dir ]]; then
-		link_target=$(readlink -f -- "$zsh_dir")
-		if [[ $link_target != "$(readlink -f -- "$repo_dir")" ]]; then
-			echo "拒絕替換未知的 Zsh 連結：$zsh_dir -> $link_target" >&2
-			return 1
-		fi
-		unlink "$zsh_dir"
-	fi
-
-	if [[ ! -e $zsh_dir && -d $hyde_dir ]]; then
-		mv "$hyde_dir" "$zsh_dir"
-	fi
-
-	if [[ -e $zsh_dir && ! -d $zsh_dir ]]; then
-		echo "Zsh 設定路徑不是目錄：$zsh_dir" >&2
-		return 1
-	fi
-
-	if [[ -d $zsh_dir && ! -f $zsh_dir/conf.d/00-hyde.zsh ]] &&
-		[[ -n $(find "$zsh_dir" -mindepth 1 -print -quit) ]]; then
-		echo "拒絕使用來源不明的 Zsh 目錄：$zsh_dir" >&2
-		return 1
-	fi
 }
 
 # 把 custom/powerdraw 注入每個 waybar layout 的最右欄位 (冪等)
@@ -305,63 +257,7 @@ install_oh_my_tmux() {
 }
 
 setup_zsh() {
-	local class="$1"
-	local zsh_dir="$XDG_CONFIG_HOME/zsh"
-	local hyde_dir="$XDG_CONFIG_HOME/zsh.hyde"
-	local repo_dir="$BASE_DIR/Config/zsh"
-	local custom_zsh="$zsh_dir/conf.d/custom.zsh"
-	local link_target
-
-	[[ $SHELL != *zsh* ]] && chsh -s "$(which zsh)"
-	mkdir -p "$XDG_CONFIG_HOME"
-
-	case "$class" in
-	Hyprland)
-		if [[ -L $zsh_dir || ! -f $zsh_dir/conf.d/00-hyde.zsh ]]; then
-			echo "HyDE Zsh 設定不存在或尚未完成：$zsh_dir" >&2
-			return 1
-		fi
-		if [[ -L $custom_zsh ]]; then
-			link_target=$(readlink -f -- "$custom_zsh")
-			if [[ $link_target != "$(readlink -f -- "$repo_dir/.zshenv")" ]]; then
-				echo "拒絕替換未知的 custom.zsh 連結：$custom_zsh -> $link_target" >&2
-				return 1
-			fi
-		elif [[ -e $custom_zsh ]]; then
-			echo "拒絕覆寫既有的 custom.zsh：$custom_zsh" >&2
-			return 1
-		else
-			ln -s "$repo_dir/.zshenv" "$custom_zsh"
-		fi
-		[[ -f $zsh_dir/plugin.zsh ]] && sed -i 's/return 1//' "$zsh_dir/plugin.zsh"
-		;;
-	*)
-		if [[ -L $zsh_dir ]]; then
-			link_target=$(readlink -f -- "$zsh_dir")
-			if [[ $link_target == "$(readlink -f -- "$repo_dir")" ]]; then
-				return
-			fi
-			echo "拒絕替換未知的 Zsh 連結：$zsh_dir -> $link_target" >&2
-			return 1
-		fi
-		if [[ -d $zsh_dir ]]; then
-			if [[ ! -f $zsh_dir/conf.d/00-hyde.zsh ]]; then
-				echo "拒絕移動來源不明的 Zsh 目錄：$zsh_dir" >&2
-				return 1
-			fi
-			if [[ -e $hyde_dir ]]; then
-				echo "HyDE Zsh 備份已存在：$hyde_dir" >&2
-				return 1
-			fi
-			mv "$zsh_dir" "$hyde_dir"
-		elif [[ -e $zsh_dir ]]; then
-			echo "Zsh 設定路徑不是目錄：$zsh_dir" >&2
-			return 1
-		fi
-		ln -s "$repo_dir" "$zsh_dir"
-		;;
-	esac
-	return 0
+	[[ $SHELL != *zsh* ]] && chsh -s "$(command -v zsh)"
 }
 
 move_config() {
@@ -478,7 +374,6 @@ main() {
 
 	setup_claude_code
 	install_required_packages
-	prepare_zsh_layout "$class" || exit 1
 	install_wm_packages "$class" || exit 1
 	install_oh_my_tmux
 	setup_zsh "$class" || exit 1

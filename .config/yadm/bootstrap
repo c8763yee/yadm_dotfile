@@ -32,6 +32,7 @@ fi
 [ -z "$CLASS" ] && echo "無效選項，使用 Base" && CLASS="Base"
 
 yadm config local.class "$CLASS"
+yadm alt
 echo "已設定 class: $CLASS"
 echo ""
 
