@@ -37,7 +37,11 @@ jobs:
               export VM_CPUS=4
               export VM_EXTRA_ARGS="-display vnc=:1 -device virtio-vga"
 
-              su tester -c "VM_MEMORY=4G VM_CPUS=4 VM_EXTRA_ARGS='''-display vnc=:1 -device virtio-vga''' /tmp/hydevm yadm-integration" \
+              runuser -u tester -- env \
+                VM_MEMORY=4G \
+                VM_CPUS=4 \
+                VM_EXTRA_ARGS="-display vnc=:1 -device virtio-vga" \
+                /tmp/hydevm yadm-integration \
                 >/tmp/hydevm.log 2>&1 &
               hydevm_pid=$!
 
