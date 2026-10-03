@@ -7,9 +7,9 @@ install_hyde() {
 	local install_status=0
 
 	if [[ ! -d $hyde_dir ]]; then
-		# 首次：完整安裝 (預設等同 -irs：install + restore + service)
+		# 首次：使用 HyDE defaults，避免 bootstrap 卡在互動式選單
 		git clone --depth 1 https://github.com/HyDE-Project/HyDE "$hyde_dir" || install_status=$?
-		(( install_status == 0 )) && bash "$hyde_dir/Scripts/install.sh" || install_status=$?
+		(( install_status == 0 )) && bash "$hyde_dir/Scripts/install.sh" -d -r -s || install_status=$?
 	else
 		# 更新：拉取最新並只還原設定 (-r restore)
 		git -C "$hyde_dir" pull || install_status=$?
