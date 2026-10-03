@@ -8,35 +8,94 @@ on:
 jobs:
   hydevm-host:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check runner virtualization
         shell: bash
         run: |
           set -euxo pipefail
           grep -Ec '(vmx|svm)' /proc/cpuinfo || true
-          ls -l /dev/kvm || true
+          ls -l /dev/kvm
 
-      - name: Run HydeVM dependency check on Arch
+      - name: Run HydeVM in Arch and boot base guest
         shell: bash
         run: |
           set -euxo pipefail
           curl -fsSL https://raw.githubusercontent.com/HyDE-Project/HyDE/master/Scripts/hydevm/hydevm.sh -o /tmp/hydevm
           chmod +x /tmp/hydevm
+          sudo chmod 666 /dev/kvm
 
-          kvm_args=()
-          if [[ -e /dev/kvm ]]; then
-            sudo chmod 666 /dev/kvm
-            kvm_args+=(--device=/dev/kvm)
-          fi
+          cat > /tmp/boot.exp <<'EXPECT'
+          set timeout 300
+          set env(VM_MEMORY) "2G"
+          set env(VM_CPUS) "2"
+          set env(VM_EXTRA_ARGS) "-nographic"
 
-          docker run --rm "${kvm_args[@]}" \
+          spawn /tmp/hydevm yadm-boot-smoke
+
+          expect {
+            -re "(?i)login:" {
+              send "arch\r"
+            }
+            timeout {
+              puts "ERROR: guest login prompt not reached"
+              exit 10
+            }
+          }
+
+          expect {
+            -re "(?i)password:" {
+              send "arch\r"
+            }
+            timeout {
+              puts "ERROR: guest password prompt not reached"
+              exit 11
+            }
+          }
+
+          expect {
+            -re {\$ $} {
+              send "echo HYDEVM_BOOT_OK\r"
+            }
+            timeout {
+              puts "ERROR: guest shell prompt not reached"
+              exit 12
+            }
+          }
+
+          expect {
+            "HYDEVM_BOOT_OK" {
+              send "sudo poweroff\r"
+            }
+            timeout {
+              puts "ERROR: guest command did not execute"
+              exit 13
+            }
+          }
+
+          expect {
+            -re "(?i)password.*:" {
+              send "arch\r"
+              exp_continue
+            }
+            eof
+            timeout {
+              puts "ERROR: guest did not power off"
+              exit 14
+            }
+          }
+          EXPECT
+
+          docker run --rm --device=/dev/kvm \
             -v /tmp/hydevm:/tmp/hydevm:ro \
+            -v /tmp/boot.exp:/tmp/boot.exp:ro \
             archlinux:latest \
             bash -lc '
               set -euxo pipefail
               pacman -Syu --noconfirm
-              pacman -S --needed --noconfirm qemu-desktop curl python git sudo
+              pacman -S --needed --noconfirm qemu-desktop curl python git sudo expect
               useradd -m tester
+              chown tester:tester /home/tester
               su tester -c "/tmp/hydevm --check-deps"
+              su tester -c "expect /tmp/boot.exp"
             '
