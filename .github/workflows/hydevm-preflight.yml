@@ -20,90 +20,108 @@ jobs:
           chmod +x /tmp/hydevm
           sudo chmod 666 /dev/kvm
 
+          cat >/tmp/hydevm-integration.sh <<'SCRIPT'
+          #!/usr/bin/env bash
+          set -euxo pipefail
+
+          pacman -Syu --noconfirm
+          pacman -S --needed --noconfirm qemu-desktop curl python git sudo \
+            openssh sshpass openbsd-netcat vncdotool
+
+          useradd -m tester
+          chown tester:tester /home/tester
+
+          runuser -u tester -- env \
+            VM_MEMORY=4G \
+            VM_CPUS=4 \
+            VM_EXTRA_ARGS="-display vnc=:1 -device virtio-vga" \
+            /tmp/hydevm yadm-integration \
+            >/tmp/hydevm.log 2>&1 &
+          hydevm_pid=$!
+
+          cleanup() {
+            kill "$hydevm_pid" 2>/dev/null || true
+            tail -200 /tmp/hydevm.log 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for _ in $(seq 1 120); do
+            nc -z 127.0.0.1 5901 && break
+            sleep 1
+          done
+          nc -z 127.0.0.1 5901
+
+          vnc_bin=$(command -v vncdo || command -v vncdotool)
+          test -n "$vnc_bin"
+
+          # HydeVM first boot is graphical. VNC is used only to turn on sshd.
+          sleep 12
+          "$vnc_bin" -s 127.0.0.1::5901 type "arch" key enter
+          sleep 2
+          "$vnc_bin" -s 127.0.0.1::5901 type "arch" key enter
+          sleep 2
+
+          "$vnc_bin" -s 127.0.0.1::5901 type "sudo pacman -Sy --needed --noconfirm openssh yadm git" key enter
+          sleep 2
+          "$vnc_bin" -s 127.0.0.1::5901 type "arch" key enter
+          sleep 15
+          "$vnc_bin" -s 127.0.0.1::5901 type "sudo systemctl enable --now sshd" key enter
+
+          ssh_guest() {
+            sshpass -p arch ssh -p 2222 \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              arch@127.0.0.1 "$@"
+          }
+
+          for _ in $(seq 1 180); do
+            if ssh_guest "echo SSH_OK" 2>/dev/null | grep -q SSH_OK; then
+              break
+            fi
+            sleep 1
+          done
+          ssh_guest "echo SSH_READY"
+
+          ssh_guest "echo arch | sudo -S sh -c 'printf "%s\\n" "arch ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/arch-yadm-test'"
+          ssh_guest "yadm clone https://github.com/c8763yee/yadm_dotfile.git -b refactor/yadm-ownership --no-bootstrap"
+          ssh_guest "yadm config local.class Hyprland && yadm alt"
+
+          ssh_guest "sh -n ~/.config/yadm/bootstrap"
+          ssh_guest "bash -n ~/.config/yadm/lib/env.sh ~/.config/yadm/lib/packages.sh ~/.config/yadm/bootstrap.d/10-packages ~/.config/yadm/bootstrap.d/20-desktop ~/.config/yadm/bootstrap.d/30-user ~/.config/yadm/bootstrap.d/40-system"
+
+          # Before HyDE install, the Hyprland class must not claim HyDE sync targets.
+          ssh_guest "test ! -e ~/.zshenv"
+          ssh_guest "test ! -e ~/.config/zsh/.zshenv"
+          ssh_guest "test -f ~/.config/zsh/plugin.zsh && test -f ~/.config/zsh/.zshrc"
+
+          plugin_before=$(ssh_guest "sha256sum ~/.config/zsh/plugin.zsh | awk '{print \\$1}'")
+          zshrc_before=$(ssh_guest "sha256sum ~/.config/zsh/.zshrc | awk '{print \\$1}'")
+
+          # Exercise the real HyDE path from this dotfile branch.
+          ssh_guest "bash ~/.config/yadm/bootstrap.d/20-desktop"
+
+          # HyDE owns sync targets; yadm preserve files must survive byte-for-byte.
+          ssh_guest "cmp ~/.zshenv ~/HyDE/Configs/.zshenv"
+          ssh_guest "cmp ~/.config/zsh/.zshenv ~/HyDE/Configs/.config/zsh/.zshenv"
+          ssh_guest "test -f ~/.config/waybar/modules/custom-powerdraw.jsonc"
+          test "$plugin_before" = "$(ssh_guest "sha256sum ~/.config/zsh/plugin.zsh | awk '{print \\$1}'")"
+          test "$zshrc_before" = "$(ssh_guest "sha256sum ~/.config/zsh/.zshrc | awk '{print \\$1}'")"
+
+          ssh_guest "TMUX=1 SSH_TTY= zsh -lic 'whence -w _gocker >/dev/null && echo ZSH_OK'" | grep -q ZSH_OK
+
+          echo "===== yadm status ====="
+          ssh_guest "yadm status --short"
+          echo "===== ownership checks passed ====="
+
+          ssh_guest "sudo poweroff" || true
+          wait "$hydevm_pid" || true
+          trap - EXIT
+          tail -120 /tmp/hydevm.log || true
+          SCRIPT
+
+          chmod +x /tmp/hydevm-integration.sh
           docker run --rm --device=/dev/kvm \
             -v /tmp/hydevm:/tmp/hydevm:ro \
+            -v /tmp/hydevm-integration.sh:/tmp/hydevm-integration.sh:ro \
             archlinux:latest \
-            bash -lc '
-              set -euxo pipefail
-              pacman -Syu --noconfirm
-              pacman -S --needed --noconfirm qemu-desktop curl python git sudo \
-                openssh sshpass openbsd-netcat vncdotool
-
-              useradd -m tester
-              chown tester:tester /home/tester
-
-              export VM_MEMORY=4G
-              export VM_CPUS=4
-              export VM_EXTRA_ARGS="-display vnc=:1 -device virtio-vga"
-
-              runuser -u tester -- env \
-                VM_MEMORY=4G \
-                VM_CPUS=4 \
-                VM_EXTRA_ARGS="-display vnc=:1 -device virtio-vga" \
-                /tmp/hydevm yadm-integration \
-                >/tmp/hydevm.log 2>&1 &
-              hydevm_pid=$!
-
-              cleanup() {
-                kill "$hydevm_pid" 2>/dev/null || true
-                tail -200 /tmp/hydevm.log 2>/dev/null || true
-              }
-              trap cleanup EXIT
-
-              for _ in $(seq 1 120); do
-                nc -z 127.0.0.1 5901 && break
-                sleep 1
-              done
-              nc -z 127.0.0.1 5901
-
-              # The base image exposes a graphical tty. Use VNC only to enable sshd;
-              # all actual tests below run over HydeVM's SSH forwarding.
-              sleep 8
-              vncdo -s 127.0.0.1::5901 type "arch" key enter
-              sleep 2
-              vncdo -s 127.0.0.1::5901 type "arch" key enter
-              sleep 2
-              vncdo -s 127.0.0.1::5901 type "echo arch | sudo -S pacman -Sy --needed --noconfirm openssh yadm git && echo arch | sudo -S systemctl enable --now sshd" key enter
-
-              ssh_cmd="sshpass -p arch ssh -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null arch@127.0.0.1"
-              for _ in $(seq 1 180); do
-                if $ssh_cmd "echo SSH_OK" 2>/dev/null | grep -q SSH_OK; then
-                  break
-                fi
-                sleep 1
-              done
-              $ssh_cmd "echo SSH_READY"
-
-              $ssh_cmd "echo arch | sudo -S sh -c '''echo "arch ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/arch-yadm-test'''"
-              $ssh_cmd "yadm clone https://github.com/c8763yee/yadm_dotfile.git -b refactor/yadm-ownership --no-bootstrap"
-              $ssh_cmd "yadm config local.class Hyprland && yadm alt"
-
-              $ssh_cmd "sh -n ~/.config/yadm/bootstrap"
-              $ssh_cmd "bash -n ~/.config/yadm/lib/env.sh ~/.config/yadm/lib/packages.sh ~/.config/yadm/bootstrap.d/10-packages ~/.config/yadm/bootstrap.d/20-desktop ~/.config/yadm/bootstrap.d/30-user ~/.config/yadm/bootstrap.d/40-system"
-
-              $ssh_cmd "test ! -e ~/.zshenv"
-              $ssh_cmd "test ! -e ~/.config/zsh/.zshenv"
-              $ssh_cmd "test -f ~/.config/zsh/plugin.zsh && test -f ~/.config/zsh/.zshrc"
-              plugin_before=$($ssh_cmd "sha256sum ~/.config/zsh/plugin.zsh | cut -d\  -f1")
-              zshrc_before=$($ssh_cmd "sha256sum ~/.config/zsh/.zshrc | cut -d\  -f1")
-
-              # This is the actual HyDE integration path from the dotfile bootstrap.
-              $ssh_cmd "bash ~/.config/yadm/bootstrap.d/20-desktop"
-
-              $ssh_cmd "cmp ~/.zshenv ~/HyDE/Configs/.zshenv"
-              $ssh_cmd "cmp ~/.config/zsh/.zshenv ~/HyDE/Configs/.config/zsh/.zshenv"
-              $ssh_cmd "test -f ~/.config/waybar/modules/custom-powerdraw.jsonc"
-              test "$plugin_before" = "$($ssh_cmd "sha256sum ~/.config/zsh/plugin.zsh | cut -d\  -f1")"
-              test "$zshrc_before" = "$($ssh_cmd "sha256sum ~/.config/zsh/.zshrc | cut -d\  -f1")"
-
-              $ssh_cmd "TMUX=1 SSH_TTY= zsh -lic '''whence -w _gocker >/dev/null && echo ZSH_OK'''" | grep -q ZSH_OK
-
-              echo "===== yadm status ====="
-              $ssh_cmd "yadm status --short"
-              echo "===== ownership checks passed ====="
-
-              $ssh_cmd "sudo poweroff" || true
-              wait "$hydevm_pid" || true
-              trap - EXIT
-              tail -120 /tmp/hydevm.log || true
-            '
+            /tmp/hydevm-integration.sh
