@@ -41,4 +41,4 @@
    smtpserver = /usr/bin/msmtp
 
 [includeIf "gitdir:~/linux-kernel/"]
-	path = ~/Config/git/.gitconfig-kernel
+	path = ~/.config/git/kernel.conf

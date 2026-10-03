@@ -1,9 +1,8 @@
 #!/bin/bash
 
 BASE_DIR="${1:-$HOME}"
-SCRIPTS_DIR="$BASE_DIR/Scripts"
-PACKAGES_DIR="$SCRIPTS_DIR/packages"
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+PACKAGES_DIR="$XDG_CONFIG_HOME/yadm/packages"
 
 . /etc/os-release
 DISTRO="$ID"
@@ -299,8 +298,6 @@ install_wm_packages() {
 }
 
 install_oh_my_tmux() {
-	ln -sf "$BASE_DIR/Config/tmux/tmux.conf" "$HOME/.tmux.conf"
-	ln -sf "$BASE_DIR/Config/tmux/.tmux.conf.local" "$HOME/.tmux.conf.local"
 	if [[ ! -d $HOME/.tmux/plugins/tpm ]]; then
 		mkdir -p "$HOME/.tmux/plugins"
 		git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
@@ -370,10 +367,6 @@ setup_zsh() {
 move_config() {
 	local class="$1"
 
-	ln -sf "$BASE_DIR/Config/nvim" "$XDG_CONFIG_HOME"
-	ln -sf "$BASE_DIR/Config/gdb/.gdbinit" "$BASE_DIR/.gdbinit"
-	ln -sf "$BASE_DIR/Config/git/.gitconfig" "$HOME/.gitconfig"
-
 	if [[ $class == "Hyprland" ]]; then
 		# waybar: 自訂 powerdraw 模組 + 腳本，並注入各 layout 最右欄位
 		mkdir -p "$XDG_CONFIG_HOME/waybar/modules" "$XDG_CONFIG_HOME/waybar/scripts"
@@ -388,8 +381,6 @@ move_config() {
 		if [[ $class == "Niri" ]]; then
 			ln -sf "$BASE_DIR/Config/niri" "$XDG_CONFIG_HOME"
 			ln -sf "$BASE_DIR/Config/waybar" "$XDG_CONFIG_HOME"
-			ln -sf "$BASE_DIR/Config/foot" "$XDG_CONFIG_HOME"
-			ln -sf "$BASE_DIR/Config/swaylock" "$XDG_CONFIG_HOME"
 		fi
 		if [[ $class == "Kde" ]]; then
 			local plasmoid plugin_id
@@ -404,7 +395,6 @@ move_config() {
 			done
 		fi
 
-		ln -sf "$BASE_DIR/Config/fastfetch" "$XDG_CONFIG_HOME"
 	fi
 }
 
@@ -418,21 +408,15 @@ setup_claude_code() {
 	claude mcp add --scope user zhtw-mcp -- target/release/zhtw-mcp
 	popd || exit
 
-	ln -sf "$BASE_DIR/Config/claude/"* ~/.claude
 
-	git clone -b main https://github.com/kingkongshot/Pensieve.git .claude/skills/pensieve
-	bash .claude/skills/pensieve/.src/scripts/init-project-data.sh
+	git clone -b main https://github.com/kingkongshot/Pensieve.git "$HOME/.claude/skills/pensieve"
+	bash "$HOME/.claude/skills/pensieve/.src/scripts/init-project-data.sh"
 	claude plugin marketplace add kingkongshot/Pensieve#claude-plugin
 	claude plugin install pensieve@kingkongshot-marketplace --scope user
 }
 
-setup_codex() {
-	mkdir -p "$HOME/.codex"
-	ln -sf "$BASE_DIR/Config/codex/AGENTS.md" "$HOME/.codex/AGENTS.md"
-}
-
 apply_crontab() {
-	local desired="$BASE_DIR/Config/crontab"
+	local desired="$XDG_CONFIG_HOME/yadm/crontab"
 	local current merged
 	local begin="# >>> dotfile managed crontab >>>"
 	local end="# <<< dotfile managed crontab <<<"
@@ -462,16 +446,6 @@ apply_crontab() {
 	return "$status"
 }
 
-check_dotfile() {
-	BASE_DIR="${1:-$HOME}"
-	if [[ ! -d $BASE_DIR/Config ]]; then
-		BASE_DIR=$HOME/.dotfile
-		git clone https://github.com/c8763yee/yadm_dotfile "$BASE_DIR"
-		git -C "$BASE_DIR" submodule update --init
-	fi
-	yadm submodule update --init
-}
-
 move_exec() {
 	mkdir -p $HOME/.local/bin
 
@@ -479,20 +453,13 @@ move_exec() {
 	sudo cp -r $BASE_DIR/Exec/root/* /usr/bin
 }
 
-# 安裝 systemd unit：Service/user -> 使用者層，Service/root -> 系統層，並 enable
+# 使用者 unit 由 yadm 直接放在 ~/.config/systemd/user；root unit 仍需安裝到 /etc。
 install_services() {
-	local user_dir="$BASE_DIR/Service/user"
 	local root_dir="$BASE_DIR/Service/root"
 
-	if compgen -G "$user_dir/*.service" >/dev/null 2>&1 ||
-		compgen -G "$user_dir/*.timer" >/dev/null 2>&1 ||
-		compgen -G "$user_dir/*.socket" >/dev/null 2>&1; then
-		mkdir -p "$XDG_CONFIG_HOME/systemd/user"
-		cp "$user_dir"/*.{service,timer,socket} "$XDG_CONFIG_HOME/systemd/user/" 2>/dev/null
+	if [[ -f $XDG_CONFIG_HOME/systemd/user/power-monitor.service ]]; then
 		systemctl --user daemon-reload
-		for unit in "$user_dir"/*.{service,timer,socket}; do
-			[[ -e $unit ]] && systemctl --user enable --now "$(basename "$unit")"
-		done
+		systemctl --user enable --now power-monitor.service
 	fi
 
 	if compgen -G "$root_dir/*.service" >/dev/null 2>&1 ||
@@ -509,9 +476,7 @@ main() {
 	local class
 	class=$(yadm config local.class 2>/dev/null || echo "Base")
 
-	check_dotfile "$1"
 	setup_claude_code
-	setup_codex
 	install_required_packages
 	prepare_zsh_layout "$class" || exit 1
 	install_wm_packages "$class" || exit 1

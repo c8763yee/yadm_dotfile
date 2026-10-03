@@ -4,7 +4,7 @@
 echo "偵測到 Distro：$PRETTY_NAME"
 echo ""
 
-WM_DIR="$HOME/Scripts/packages/wm"
+WM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/yadm/packages/wm"
 
 if [ -n "$YADM_CLASS" ]; then
     CLASS="$YADM_CLASS"
