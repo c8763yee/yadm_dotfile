@@ -16,6 +16,13 @@ autoload -Uz _zinit
 autoload -Uz compinit
 compinit -d "${ZDOTDIR:-$HOME}/.zcompdump"
 
+# Local generated completions live outside HyDE-owned completion paths.
+# Load them only after compinit has defined compdef.
+for completion in "${ZDOTDIR:-$HOME/.config/zsh}"/conf.d/autocompletion/*.zsh(N); do
+    source "$completion"
+done
+unset completion
+
 # Load plugins and themes
 zinit ice depth=1
 zinit light romkatv/powerlevel10k
