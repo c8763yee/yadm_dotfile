@@ -22,35 +22,40 @@ pkg_install() {
 
 resolve_packages() {
 	local pkg_file="$1"
-	python3 - "$DISTRO" "$PACKAGES_DIR/aliases.yaml" "$pkg_file" <<'PYEOF'
-import sys, pathlib
-
-distro = sys.argv[1]
-aliases_file = pathlib.Path(sys.argv[2])
-pkg_file = pathlib.Path(sys.argv[3])
-
-aliases = {}
-current_pkg = None
-for line in aliases_file.read_text().splitlines():
-    line = line.rstrip()
-    if not line.startswith(" ") and line.endswith(":"):
-        current_pkg = line[:-1].strip()
-        aliases[current_pkg] = {}
-    elif current_pkg and ":" in line:
-        key, _, val = line.strip().partition(":")
-        aliases[current_pkg][key.strip()] = val.strip()
-
-for line in pkg_file.read_text().splitlines():
-    pkg = line.strip()
-    if not pkg or pkg.startswith("#"):
-        continue
-    if pkg in aliases:
-        resolved = aliases[pkg].get(distro, pkg)
-        if resolved and resolved != "~":
-            print(resolved)
-    else:
-        print(pkg)
-PYEOF
+	awk -v distro="$DISTRO" '
+		FNR == NR {
+			line = $0
+			if (line ~ /^[[:space:]]*#/ || line ~ /^[[:space:]]*$/)
+				next
+			if (line !~ /^[[:space:]]/ && line ~ /:[[:space:]]*$/) {
+				current = line
+				sub(/:[[:space:]]*$/, "", current)
+				next
+			}
+			if (current != "" && line ~ /^[[:space:]]+/) {
+				sub(/^[[:space:]]+/, "", line)
+				sep = index(line, ":")
+				if (!sep)
+					next
+				key = substr(line, 1, sep - 1)
+				value = substr(line, sep + 1)
+				gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
+				gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+				if (key == distro)
+					alias[current] = value
+			}
+			next
+		}
+		{
+			pkg = $0
+			gsub(/^[[:space:]]+|[[:space:]]+$/, "", pkg)
+			if (pkg == "" || pkg ~ /^#/)
+				next
+			value = (pkg in alias) ? alias[pkg] : pkg
+			if (value != "" && value != "~")
+				print value
+		}
+	' "$PACKAGES_DIR/aliases.yaml" "$pkg_file"
 }
 
 install_packages() {
@@ -61,9 +66,11 @@ install_packages() {
 }
 
 install_yay() {
-	sudo pacman -S --noconfirm base-devel
+	command -v yay >/dev/null 2>&1 && return 0
+	sudo pacman -S --noconfirm --needed base-devel
+	rm -rf /tmp/yay
 	git clone https://aur.archlinux.org/yay.git /tmp/yay
-	pushd /tmp/yay || exit
+	pushd /tmp/yay || return 1
 	makepkg -si --noconfirm
-	popd || exit
+	popd || return 1
 }
