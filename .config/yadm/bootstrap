@@ -15,8 +15,12 @@ else
         # 只列主要清單，跳過 -aur.txt
         case "$f" in *-aur.txt) continue ;; esac
         name=$(basename "$f" .txt)
-        # capitalize first letter via python3
-        label=$(python3 -c "import sys; print(sys.argv[1].capitalize())" "$name")
+        case "$name" in
+            hyprland) label="Hyprland" ;;
+            kde) label="Kde" ;;
+            niri) label="Niri" ;;
+            *) label="$name" ;;
+        esac
         echo "  $i) $label"
         eval "WM_$i=$label"
         i=$((i + 1))
