@@ -26,7 +26,7 @@ jobs:
 
           pacman -Syu --noconfirm
           pacman -S --needed --noconfirm qemu-desktop curl python git sudo \
-            openssh sshpass openbsd-netcat vncdotool
+            openssh sshpass openbsd-netcat vncdotool python-cryptography
 
           useradd -m tester
           chown tester:tester /home/tester
