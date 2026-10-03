@@ -1,0 +1,42 @@
+name: HydeVM preflight
+
+on:
+  push:
+    branches:
+      - refactor/yadm-ownership
+
+jobs:
+  hydevm-host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check runner virtualization
+        shell: bash
+        run: |
+          set -euxo pipefail
+          grep -Ec '(vmx|svm)' /proc/cpuinfo || true
+          ls -l /dev/kvm || true
+
+      - name: Run HydeVM dependency check on Arch
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl -fsSL https://raw.githubusercontent.com/HyDE-Project/HyDE/master/Scripts/hydevm/hydevm.sh -o /tmp/hydevm
+          chmod +x /tmp/hydevm
+
+          kvm_args=()
+          if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
+            kvm_args+=(--device=/dev/kvm)
+          fi
+
+          docker run --rm "${kvm_args[@]}" \
+            -v /tmp/hydevm:/tmp/hydevm:ro \
+            archlinux:latest \
+            bash -lc '
+              set -euxo pipefail
+              pacman -Syu --noconfirm
+              pacman -S --needed --noconfirm qemu-desktop curl python git sudo
+              useradd -m tester
+              su tester -c "/tmp/hydevm --check-deps"
+            '
