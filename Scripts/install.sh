@@ -264,11 +264,8 @@ move_config() {
 	local class="$1"
 
 	if [[ $class == "Hyprland" ]]; then
-		# waybar: 自訂 powerdraw 模組 + 腳本，並注入各 layout 最右欄位
-		mkdir -p "$XDG_CONFIG_HOME/waybar/modules" "$XDG_CONFIG_HOME/waybar/scripts"
-		ln -sf "$BASE_DIR/Config/waybar/custom-powerdraw.jsonc" "$XDG_CONFIG_HOME/waybar/modules/"
-		ln -sf "$BASE_DIR/Config/waybar/scripts/get_power.sh" "$XDG_CONFIG_HOME/waybar/scripts/"
-		ln -sf "$BASE_DIR/Config/waybar/scripts/power_daemon.sh" "$XDG_CONFIG_HOME/waybar/scripts/"
+		# HyDE discovers user modules from ~/.config/waybar/modules.
+		command -v hyde-shell >/dev/null && hyde-shell waybar --update || :
 		inject_waybar_powerdraw
 
 		ln -sf "$BASE_DIR/Config/hypr/userprefs.conf" "$XDG_CONFIG_HOME/hypr/userprefs.conf"
@@ -276,7 +273,6 @@ move_config() {
 	else
 		if [[ $class == "Niri" ]]; then
 			ln -sf "$BASE_DIR/Config/niri" "$XDG_CONFIG_HOME"
-			ln -sf "$BASE_DIR/Config/waybar" "$XDG_CONFIG_HOME"
 		fi
 		if [[ $class == "Kde" ]]; then
 			local plasmoid plugin_id
