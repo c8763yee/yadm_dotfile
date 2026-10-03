@@ -2,8 +2,8 @@
 
 Before doing any work, read and follow these shared instruction files:
 
-- `/home/c8763yee/.claude/custom-prompt/linus.md`
-- `/home/c8763yee/.claude/custom-prompt/chinese.md`
+- `$HOME/.claude/custom-prompt/linus.md`
+- `$HOME/.claude/custom-prompt/chinese.md`
 
 ## zh-TW Output Requirements
 

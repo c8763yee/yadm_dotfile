@@ -15,7 +15,7 @@ local check_backspace = function()
   return col == 0 or vim.fn.getline("."):sub(col, col):match("%s")
 end
 
-local dict = vim.fn.expand("$HOME/.dotfiles/nvim/10k.txt")
+local dict = vim.fn.expand("$HOME/.config/nvim/10k.txt")
 
 -- `:` cmdline setup.
 cmp.setup.cmdline(":", {
