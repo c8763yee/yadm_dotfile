@@ -27,8 +27,7 @@ jobs:
               set -euxo pipefail
               pacman -Syu --noconfirm
               pacman -S --needed --noconfirm qemu-desktop curl python git sudo \
-                python-pip openssh sshpass openbsd-netcat
-              python -m pip install --break-system-packages --target /opt/vncdotool vncdotool
+                openssh sshpass openbsd-netcat vncdotool
 
               useradd -m tester
               chown tester:tester /home/tester
@@ -60,11 +59,11 @@ jobs:
               # The base image exposes a graphical tty. Use VNC only to enable sshd;
               # all actual tests below run over HydeVM's SSH forwarding.
               sleep 8
-              PYTHONPATH=/opt/vncdotool python -m vncdotool.command -s 127.0.0.1::5901 type "arch" key enter
+              vncdo -s 127.0.0.1::5901 type "arch" key enter
               sleep 2
-              PYTHONPATH=/opt/vncdotool python -m vncdotool.command -s 127.0.0.1::5901 type "arch" key enter
+              vncdo -s 127.0.0.1::5901 type "arch" key enter
               sleep 2
-              PYTHONPATH=/opt/vncdotool python -m vncdotool.command -s 127.0.0.1::5901 type "echo arch | sudo -S pacman -Sy --needed --noconfirm openssh yadm git && echo arch | sudo -S systemctl enable --now sshd" key enter
+              vncdo -s 127.0.0.1::5901 type "echo arch | sudo -S pacman -Sy --needed --noconfirm openssh yadm git && echo arch | sudo -S systemctl enable --now sshd" key enter
 
               ssh_cmd="sshpass -p arch ssh -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null arch@127.0.0.1"
               for _ in $(seq 1 180); do
