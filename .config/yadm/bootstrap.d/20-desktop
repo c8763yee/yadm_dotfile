@@ -174,8 +174,6 @@ move_config() {
 		ln -sf "$BASE_DIR/Config/hypr/userprefs.conf" "$XDG_CONFIG_HOME/hypr/userprefs.conf"
 		ln -sf "$BASE_DIR/Config/hypr/custom" "$XDG_CONFIG_HOME/hypr"
 	else
-		if [[ $class == "Niri" ]]; then
-		fi
 		if [[ $class == "Kde" ]]; then
 			local plasmoid plugin_id
 			for plasmoid in "$BASE_DIR/Config/plasma/plasmoids"/*; do
