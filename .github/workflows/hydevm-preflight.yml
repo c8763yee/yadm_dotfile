@@ -82,7 +82,10 @@ jobs:
           done
           ssh_guest "echo SSH_READY"
 
-          ssh_guest "echo arch | sudo -S sh -c 'printf "%s\\n" "arch ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/arch-yadm-test'"
+          printf '%s\n' arch 'arch ALL=(ALL) NOPASSWD: ALL' |
+            ssh_guest "sudo -S tee /etc/sudoers.d/arch-yadm-test >/dev/null"
+          printf '%s\n' arch |
+            ssh_guest "sudo -S chmod 0440 /etc/sudoers.d/arch-yadm-test"
           ssh_guest "yadm clone https://github.com/c8763yee/yadm_dotfile.git -b refactor/yadm-ownership --no-bootstrap"
           ssh_guest "yadm config local.class Hyprland && yadm alt"
 
@@ -94,8 +97,8 @@ jobs:
           ssh_guest "test ! -e ~/.config/zsh/.zshenv"
           ssh_guest "test -f ~/.config/zsh/plugin.zsh && test -f ~/.config/zsh/.zshrc"
 
-          plugin_before=$(ssh_guest "sha256sum ~/.config/zsh/plugin.zsh | awk '{print \\$1}'")
-          zshrc_before=$(ssh_guest "sha256sum ~/.config/zsh/.zshrc | awk '{print \\$1}'")
+          plugin_before=$(ssh_guest "sha256sum ~/.config/zsh/plugin.zsh" | cut -d' ' -f1)
+          zshrc_before=$(ssh_guest "sha256sum ~/.config/zsh/.zshrc" | cut -d' ' -f1)
 
           # Exercise the real HyDE path from this dotfile branch.
           ssh_guest "bash ~/.config/yadm/bootstrap.d/20-desktop"
@@ -104,8 +107,8 @@ jobs:
           ssh_guest "cmp ~/.zshenv ~/HyDE/Configs/.zshenv"
           ssh_guest "cmp ~/.config/zsh/.zshenv ~/HyDE/Configs/.config/zsh/.zshenv"
           ssh_guest "test -f ~/.config/waybar/modules/custom-powerdraw.jsonc"
-          test "$plugin_before" = "$(ssh_guest "sha256sum ~/.config/zsh/plugin.zsh | awk '{print \\$1}'")"
-          test "$zshrc_before" = "$(ssh_guest "sha256sum ~/.config/zsh/.zshrc | awk '{print \\$1}'")"
+          test "$plugin_before" = "$(ssh_guest "sha256sum ~/.config/zsh/plugin.zsh" | cut -d' ' -f1)"
+          test "$zshrc_before" = "$(ssh_guest "sha256sum ~/.config/zsh/.zshrc" | cut -d' ' -f1)"
 
           ssh_guest "TMUX=1 SSH_TTY= zsh -lic 'whence -w _gocker >/dev/null && echo ZSH_OK'" | grep -q ZSH_OK
 
