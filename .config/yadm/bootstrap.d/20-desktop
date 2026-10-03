@@ -1,93 +1,6 @@
 #!/bin/bash
-
-BASE_DIR="${1:-$HOME}"
-export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-PACKAGES_DIR="$XDG_CONFIG_HOME/yadm/packages"
-
-. /etc/os-release
-DISTRO="$ID"
-
-pkg_update() {
-	case "$DISTRO" in
-	arch) sudo pacman -Syu --noconfirm ;;
-	msys2) pacman -Syu --noconfirm ;;
-	debian | ubuntu | raspbian) sudo apt update ;;
-	fedora) sudo dnf update -y ;;
-	*) echo "不支援的 distro: $DISTRO" && exit 1 ;;
-	esac
-}
-
-pkg_install() {
-	case "$DISTRO" in
-	arch) sudo pacman -S --noconfirm --needed "$@" --overwrite "*";;
-	msys2) pacman -S --noconfirm "$@" ;;
-	debian | ubuntu | raspbian) sudo apt install -y "$@" ;;
-	fedora) sudo dnf install -y --skip-unavailable "$@" ;;
-	esac
-}
-
-# 一次 Python 呼叫解析整份套件清單，避免 N 次 subprocess
-resolve_packages() {
-	local pkg_file="$1"
-	python3 - "$DISTRO" "$PACKAGES_DIR/aliases.yaml" "$pkg_file" <<'PYEOF'
-import sys, pathlib
-
-distro = sys.argv[1]
-aliases_file = pathlib.Path(sys.argv[2])
-pkg_file = pathlib.Path(sys.argv[3])
-
-aliases = {}
-current_pkg = None
-for line in aliases_file.read_text().splitlines():
-    line = line.rstrip()
-    if not line.startswith(" ") and line.endswith(":"):
-        current_pkg = line[:-1].strip()
-        aliases[current_pkg] = {}
-    elif current_pkg and ":" in line:
-        key, _, val = line.strip().partition(":")
-        aliases[current_pkg][key.strip()] = val.strip()
-
-for line in pkg_file.read_text().splitlines():
-    pkg = line.strip()
-    if not pkg or pkg.startswith("#"):
-        continue
-    if pkg in aliases:
-        resolved = aliases[pkg].get(distro, pkg)
-        if resolved and resolved != "~":
-            print(resolved)
-    else:
-        print(pkg)
-PYEOF
-}
-
-install_packages() {
-	local pkg_file="$1"
-	local -a pkgs
-	mapfile -t pkgs < <(resolve_packages "$pkg_file")
-	[[ ${#pkgs[@]} -gt 0 ]] && pkg_install "${pkgs[@]}"
-}
-
-install_yay() {
-	sudo pacman -S --noconfirm base-devel
-	git clone https://aur.archlinux.org/yay.git /tmp/yay
-	pushd /tmp/yay || exit
-	makepkg -si --noconfirm
-	popd || exit
-}
-
-install_required_packages() {
-	pkg_update
-	install_packages "$PACKAGES_DIR/base.txt"
-
-	case "$DISTRO" in
-	arch)
-		sudo systemctl enable --now cronie
-		;;
-	fedora)
-		sudo dnf --enablerepo=fedora-debuginfo,updates-debuginfo install kernel-debuginfo
-		;;
-	esac
-}
+. "${XDG_CONFIG_HOME:-$HOME/.config}/yadm/lib/env.sh"
+. "$XDG_CONFIG_HOME/yadm/lib/packages.sh"
 
 install_hyde() {
 	local hyde_dir="$BASE_DIR/HyDE"
@@ -107,6 +20,7 @@ install_hyde() {
 }
 
 # 把 custom/powerdraw 注入每個 waybar layout 的最右欄位 (冪等)
+
 inject_waybar_powerdraw() {
 	python3 - "$XDG_CONFIG_HOME/waybar/layouts" "$HOME/.local/share/waybar/layouts" <<'PYEOF'
 import sys, os, json
@@ -249,17 +163,6 @@ install_wm_packages() {
 	return 0
 }
 
-install_oh_my_tmux() {
-	if [[ ! -d $HOME/.tmux/plugins/tpm ]]; then
-		mkdir -p "$HOME/.tmux/plugins"
-		git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
-	fi
-}
-
-setup_zsh() {
-	[[ $SHELL != *zsh* ]] && chsh -s "$(command -v zsh)"
-}
-
 move_config() {
 	local class="$1"
 
@@ -290,108 +193,6 @@ move_config() {
 	fi
 }
 
-setup_claude_code() {
-	curl -fsSL https://claude.ai/install.sh | bash
-	curl -fsSL https://bun.sh/install | bash
-
-	[[ ! -d zhtw-mcp ]] && git clone https://github.com/sysprog21/zhtw-mcp.git || git -C zhtw-mcp pull
-	pushd zhtw-mcp || exit
-	make
-	claude mcp add --scope user zhtw-mcp -- target/release/zhtw-mcp
-	popd || exit
-
-
-	git clone -b main https://github.com/kingkongshot/Pensieve.git "$HOME/.claude/skills/pensieve"
-	bash "$HOME/.claude/skills/pensieve/.src/scripts/init-project-data.sh"
-	claude plugin marketplace add kingkongshot/Pensieve#claude-plugin
-	claude plugin install pensieve@kingkongshot-marketplace --scope user
-}
-
-apply_crontab() {
-	local desired="$XDG_CONFIG_HOME/yadm/crontab"
-	local current merged
-	local begin="# >>> dotfile managed crontab >>>"
-	local end="# <<< dotfile managed crontab <<<"
-
-	[[ -f $desired ]] || return
-	current=$(mktemp) || return 1
-	merged=$(mktemp) || {
-		rm -f "$current"
-		return 1
-	}
-
-	crontab -l 2>/dev/null >"$current" || :
-	awk -v begin="$begin" -v end="$end" '
-		NR == FNR { desired[$0] = 1; next }
-		$0 == begin { managed = 1; next }
-		managed && $0 == end { managed = 0; next }
-		!managed && !desired[$0] { print }
-	' "$desired" "$current" >"$merged"
-	{
-		cat "$merged"
-		printf '%s\n' "$begin"
-		cat "$desired"
-		printf '%s\n' "$end"
-	} | crontab -
-	local status=${PIPESTATUS[1]}
-	rm -f "$current" "$merged"
-	return "$status"
-}
-
-move_exec() {
-	mkdir -p $HOME/.local/bin
-
-	cp -r $BASE_DIR/Exec/user/* $HOME/.local/bin
-	sudo cp -r $BASE_DIR/Exec/root/* /usr/bin
-}
-
-# 使用者 unit 由 yadm 直接放在 ~/.config/systemd/user；root unit 仍需安裝到 /etc。
-install_services() {
-	local root_dir="$BASE_DIR/Service/root"
-
-	if [[ -f $XDG_CONFIG_HOME/systemd/user/power-monitor.service ]]; then
-		systemctl --user daemon-reload
-		systemctl --user enable --now power-monitor.service
-	fi
-
-	if compgen -G "$root_dir/*.service" >/dev/null 2>&1 ||
-		compgen -G "$root_dir/*.timer" >/dev/null 2>&1 ||
-		compgen -G "$root_dir/*.socket" >/dev/null 2>&1; then
-		sudo cp "$root_dir"/*.{service,timer,socket} /etc/systemd/system/ 2>/dev/null
-		sudo systemctl daemon-reload
-		for unit in "$root_dir"/*.{service,timer,socket}; do
-			[[ -e $unit ]] && sudo systemctl enable --now "$(basename "$unit")"
-		done
-	fi
-}
-main() {
-	local class
-	class=$(yadm config local.class 2>/dev/null || echo "Base")
-
-	setup_claude_code
-	install_required_packages
-	install_wm_packages "$class" || exit 1
-	install_oh_my_tmux
-	setup_zsh "$class" || exit 1
-	move_config "$class"
-	apply_crontab
-	move_exec
-	install_services
-}
-
-is_sourced() {
-	if [ -n "$BASH_VERSION" ]; then
-		[[ "${BASH_SOURCE[0]}" != "${0}" ]]
-	elif [ -n "$ZSH_VERSION" ]; then
-		[[ "$zsh_eval_context" == *file* ]]
-	else
-		[[ "$0" == *"sh" ]]
-	fi
-}
-
-if is_sourced; then
-	echo "$0 sourced"
-else
-	main "$@"
-fi
-echo Done
+class=$(yadm config local.class 2>/dev/null || echo "Base")
+install_wm_packages "$class" || exit 1
+move_config "$class"

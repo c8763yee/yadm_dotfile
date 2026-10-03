@@ -36,4 +36,9 @@ yadm alt
 echo "已設定 class: $CLASS"
 echo ""
 
-bash "$HOME/Scripts/install.sh" "$HOME"
+BOOTSTRAP_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/yadm/bootstrap.d"
+for script in "$BOOTSTRAP_DIR"/*; do
+    [ -x "$script" ] || continue
+    echo "==> $(basename "$script")"
+    "$script" || exit $?
+done

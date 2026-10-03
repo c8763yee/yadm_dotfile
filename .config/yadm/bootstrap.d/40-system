@@ -1,0 +1,33 @@
+#!/bin/bash
+. "${XDG_CONFIG_HOME:-$HOME/.config}/yadm/lib/env.sh"
+
+move_exec() {
+	mkdir -p $HOME/.local/bin
+
+	cp -r $BASE_DIR/Exec/user/* $HOME/.local/bin
+	sudo cp -r $BASE_DIR/Exec/root/* /usr/bin
+}
+
+# 使用者 unit 由 yadm 直接放在 ~/.config/systemd/user；root unit 仍需安裝到 /etc。
+
+install_services() {
+	local root_dir="$BASE_DIR/Service/root"
+
+	if [[ -f $XDG_CONFIG_HOME/systemd/user/power-monitor.service ]]; then
+		systemctl --user daemon-reload
+		systemctl --user enable --now power-monitor.service
+	fi
+
+	if compgen -G "$root_dir/*.service" >/dev/null 2>&1 ||
+		compgen -G "$root_dir/*.timer" >/dev/null 2>&1 ||
+		compgen -G "$root_dir/*.socket" >/dev/null 2>&1; then
+		sudo cp "$root_dir"/*.{service,timer,socket} /etc/systemd/system/ 2>/dev/null
+		sudo systemctl daemon-reload
+		for unit in "$root_dir"/*.{service,timer,socket}; do
+			[[ -e $unit ]] && sudo systemctl enable --now "$(basename "$unit")"
+		done
+	fi
+}
+
+move_exec
+install_services
