@@ -619,10 +619,35 @@ zsh -n ~/.config/zsh/.zshrc ~/.config/zsh/plugin.zsh ~/.config/zsh/zinit.zsh
 
 ### T60：Desktop stage
 
+Hyprland case 在執行 desktop stage 前先記錄 JACK provider 狀態：
+
+```bash
+{
+  pacman -Q jack2 pipewire-jack lib32-jack2 lib32-pipewire-jack 2>/dev/null || true
+  grep -E '\[ALPM\] installed (jack2|pipewire-jack|lib32-jack2|lib32-pipewire-jack)' \
+    /var/log/pacman.log || true
+
+  if command -v pactree >/dev/null 2>&1 && pacman -Qq jack2 >/dev/null 2>&1; then
+    pactree -r jack2 || true
+  fi
+} | tee /mnt/yadm-results/jack-provider-before-desktop.txt
+```
+
+接著執行：
+
 ```bash
 bash ~/.config/yadm/bootstrap.d/20-desktop \
   2>&1 | tee /mnt/yadm-results/20-desktop.log
 ```
+
+Hyprland case 額外要求：
+
+```bash
+pacman -Q pipewire-jack
+! pacman -Q jack2
+```
+
+原因是 HyDE core 明確使用 `pipewire-jack`。本 repo 的 Hyprland package set 也必須在進入 HyDE 前就選定相同 JACK provider，避免 pacman 先為虛擬 `jack` 選到 `jack2`，之後 HyDE 再要求 `pipewire-jack` 時產生 provider conflict。
 
 不同 profile 的 assertion 見第 11 節。
 
@@ -1001,6 +1026,7 @@ results/QEMU-ARCH-HYPRLAND/
 ├── serial.log
 ├── 10-packages.log
 ├── 20-desktop.log
+├── jack-provider-before-desktop.txt
 ├── 30-user.log
 ├── 40-system.log
 ├── bootstrap-second.log
