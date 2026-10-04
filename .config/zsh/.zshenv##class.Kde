@@ -3,9 +3,9 @@
 custom_dir="${ZDOTDIR:-$HOME/.config/zsh}/conf.d"
 for file in "$custom_dir"/**/*.zsh(N); do
   [[ $file == */autocompletion/* ]] && (( ! $+functions[compdef] )) && continue
-  if [[ -r "$file" ]]; then
-    source "$file" || return 1
-  fi
+  # conf.d files are configuration fragments. Their final command status is
+  # not an error contract (for example, an optional conditional may be false).
+  [[ -r "$file" ]] && source "$file"
 done
 unset custom_dir file
 
