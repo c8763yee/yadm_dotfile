@@ -87,13 +87,13 @@ Options:
 
 Storage:
   ~/yadm_dotfile/tests/images/   Persistent base images.
-  ~/yadm_dotfile/tests/vms/      Disposable per-case qcow2 overlays.
+  ~/yadm_dotfile/tests/vms/      Disposable per-case VM disks.
   ~/yadm_dotfile/tests/seeds/    Disposable cloud-init seeds.
   ~/yadm_dotfile/tests/logs/     QEMU serial logs.
   ~/yadm_dotfile/tests/results/  Per-case manifests.
 
 After you finish a case, power off the guest normally. When QEMU exits,
-the case overlay is deleted immediately and the next selected case starts.
+the disposable VM disk is deleted immediately and the next selected case starts.
 
 Environment overrides:
   VM_MEMORY=8G
@@ -256,9 +256,10 @@ image_format() {
   qemu-img info "$1" | awk -F': ' '/^file format:/ { print $2; exit }'
 }
 
-create_overlay() {
-  local base="$1"
-  local overlay="$2"
+prepare_vm_disk() {
+  local os="$1"
+  local base="$2"
+  local vm_disk="$3"
   local format
 
   format=$(image_format "$base")
@@ -267,8 +268,30 @@ create_overlay() {
     return 1
   }
 
-  rm -f -- "$overlay"
-  qemu-img create -q -f qcow2 -F "$format" -b "$base" "$overlay"
+  rm -f -- "$vm_disk"
+
+  case "$os" in
+    arch|debian|fedora)
+      if [[ "$format" != "qcow2" ]]; then
+        echo "$os base image must be qcow2 for copy-mode testing: $base ($format)" >&2
+        return 1
+      fi
+      echo "Copying qcow2 base image for disposable VM:" >&2
+      echo "  $base" >&2
+      echo "  -> $vm_disk" >&2
+      cp --reflink=never --sparse=always -- "$base" "$vm_disk"
+      ;;
+    ubuntu)
+      echo "Creating qcow2 overlay for Ubuntu raw/img base:" >&2
+      echo "  backing: $base ($format)" >&2
+      echo "  overlay: $vm_disk" >&2
+      qemu-img create -q -f qcow2 -F "$format" -b "$base" "$vm_disk"
+      ;;
+    *)
+      echo "Unsupported VM disk strategy for OS: $os" >&2
+      return 1
+      ;;
+  esac
 }
 
 create_cloud_seed() {
@@ -434,7 +457,7 @@ EOF
 When this case is finished:
   sudo poweroff
 
-The runner waits for QEMU to exit, deletes the disposable qcow2,
+The runner waits for QEMU to exit, deletes the disposable VM disk,
 then immediately starts the next selected case.
 EOF
 }
@@ -446,7 +469,7 @@ write_manifest() {
   local profile="$4"
   local contract="$5"
   local base="$6"
-  local overlay="$7"
+  local vm_disk="$7"
 
   mkdir -p "$result_dir"
   {
@@ -457,12 +480,16 @@ write_manifest() {
     echo "KVM=$([[ -r /dev/kvm && -w /dev/kvm ]] && echo yes || echo no)"
     echo "BASE_IMAGE=$base"
     echo "BASE_SHA256=$(sha256sum "$base" | awk '{print $1}')"
-    echo "VM_OVERLAY=$overlay"
+    echo "VM_DISK=$vm_disk"
     echo "REPO_URL=$REPO_URL"
     echo "REPO_BRANCH=$REPO_BRANCH"
     echo "PROFILE=$profile"
     echo "OS=$os"
     echo "CONTRACT=$contract"
+    case "$os" in
+      arch|debian|fedora) echo "VM_DISK_STRATEGY=copy" ;;
+      ubuntu) echo "VM_DISK_STRATEGY=overlay" ;;
+    esac
   } >"$result_dir/manifest.txt"
 }
 
@@ -472,7 +499,7 @@ launch_case() {
   local profile="$3"
   local contract="$4"
   local base="$5"
-  local overlay="$6"
+  local vm_disk="$6"
   local seed="$7"
   local result_dir="$8"
   local serial="$LOGS_DIR/$id.serial.log"
@@ -488,7 +515,7 @@ launch_case() {
     -name "$id"
     -m "$VM_MEMORY"
     -smp "$VM_CPUS"
-    -drive "file=$overlay,format=qcow2,if=virtio"
+    -drive "file=$vm_disk,format=qcow2,if=virtio"
     -netdev "user,id=net0,hostfwd=tcp::$SSH_PORT-:22"
     -device "virtio-net-pci,netdev=net0"
     -serial "file:$serial"
@@ -518,11 +545,11 @@ launch_case() {
 run_case() {
   local row="$1"
   local id os profile contract
-  local result_dir base overlay seed="" status=0
+  local result_dir base vm_disk seed="" status=0
 
   IFS='|' read -r id os profile contract <<<"$row"
   result_dir="$RESULTS_DIR/$id"
-  overlay="$VMS_DIR/$id.qcow2"
+  vm_disk="$VMS_DIR/$id.qcow2"
 
   echo
   echo "================================================================"
@@ -535,24 +562,24 @@ run_case() {
     return 1
   }
 
-  create_overlay "$base" "$overlay"
-  CURRENT_VM="$overlay"
+  prepare_vm_disk "$os" "$base" "$vm_disk"
+  CURRENT_VM="$vm_disk"
 
   if [[ "$os" != "arch" ]]; then
     seed=$(create_cloud_seed "$id" "$os" "$profile" "$contract")
     CURRENT_SEED="$seed"
   fi
 
-  write_manifest "$result_dir" "$id" "$os" "$profile" "$contract" "$base" "$overlay"
+  write_manifest "$result_dir" "$id" "$os" "$profile" "$contract" "$base" "$vm_disk"
 
   set +e
-  launch_case "$id" "$os" "$profile" "$contract" "$base" "$overlay" "$seed" "$result_dir"
+  launch_case "$id" "$os" "$profile" "$contract" "$base" "$vm_disk" "$seed" "$result_dir"
   status=$?
   set -e
 
   echo
   echo "QEMU exited for $id with status $status"
-  echo "Deleting disposable VM: $overlay"
+  echo "Deleting disposable VM disk: $vm_disk"
   cleanup_current
   rm -f -- "$seed"
 
