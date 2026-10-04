@@ -398,17 +398,36 @@ sudo systemctl enable --now sshd
 
 每個 Linux case 都依相同順序執行。
 
+開始 T00 前，先掛載 runner 提供的 per-case shared directory：
+
+```bash
+sudo mkdir -p /mnt/yadm-results
+mountpoint -q /mnt/yadm-results || \
+  sudo mount -t 9p -o trans=virtio,version=9p2000.L \
+    yadm-results /mnt/yadm-results
+
+test -w /mnt/yadm-results
+```
+
+Guest 的 `/mnt/yadm-results/` 對應 host：
+
+```text
+~/yadm_dotfile/tests/results/<CASE>/
+```
+
+後續所有需要保留的測試輸出都寫到這個 shared directory，不寫到 guest 的 `~/`。
+
 ### T00：環境紀錄
 
 ```bash
-cat /etc/os-release
-uname -a
-uname -m
-command -v yadm
-yadm --version
+{
+  cat /etc/os-release
+  uname -a
+  uname -m
+  command -v yadm
+  yadm --version
+} 2>&1 | tee /mnt/yadm-results/environment.txt
 ```
-
-輸出寫入 `results/<case>/environment.txt`。
 
 ### T10：Clone，但不直接執行 bootstrap
 
@@ -528,7 +547,7 @@ cronie -> cron on Debian/Ubuntu
 
 ```bash
 bash ~/.config/yadm/bootstrap.d/10-packages \
-  2>&1 | tee ~/10-packages.log
+  2>&1 | tee /mnt/yadm-results/10-packages.log
 ```
 
 判定：
@@ -602,7 +621,7 @@ zsh -n ~/.config/zsh/.zshrc ~/.config/zsh/plugin.zsh ~/.config/zsh/zinit.zsh
 
 ```bash
 bash ~/.config/yadm/bootstrap.d/20-desktop \
-  2>&1 | tee ~/20-desktop.log
+  2>&1 | tee /mnt/yadm-results/20-desktop.log
 ```
 
 不同 profile 的 assertion 見第 11 節。
@@ -611,7 +630,7 @@ bash ~/.config/yadm/bootstrap.d/20-desktop \
 
 ```bash
 bash ~/.config/yadm/bootstrap.d/30-user \
-  2>&1 | tee ~/30-user.log
+  2>&1 | tee /mnt/yadm-results/30-user.log
 ```
 
 至少驗證：
@@ -659,7 +678,7 @@ TMUX=1 SSH_TTY= zsh -lic \
 
 ```bash
 bash ~/.config/yadm/bootstrap.d/40-system \
-  2>&1 | tee ~/40-system.log
+  2>&1 | tee /mnt/yadm-results/40-system.log
 ```
 
 驗證：
@@ -676,7 +695,7 @@ test -x ~/.local/bin/power-monitor-daemon
 ### T90：Repository cleanliness
 
 ```bash
-yadm status --short | tee ~/yadm-status.txt
+yadm status --short | tee /mnt/yadm-results/yadm-status.txt
 ```
 
 允許的差異必須有明確理由。以下視為 FAIL：
@@ -693,14 +712,14 @@ yadm status --short | tee ~/yadm-status.txt
 ```bash
 find ~/.config/zsh ~/.config/waybar ~/.config/yadm \
   -type f -print0 | sort -z | xargs -0 sha256sum \
-  > ~/before-second-run.sha256
+  > /mnt/yadm-results/before-second-run.sha256
 
 YADM_CLASS="$PROFILE" yadm bootstrap \
-  2>&1 | tee ~/bootstrap-second.log
+  2>&1 | tee /mnt/yadm-results/bootstrap-second.log
 
 find ~/.config/zsh ~/.config/waybar ~/.config/yadm \
   -type f -print0 | sort -z | xargs -0 sha256sum \
-  > ~/after-second-run.sha256
+  > /mnt/yadm-results/after-second-run.sha256
 ```
 
 再檢查：
@@ -730,9 +749,11 @@ sudo reboot
 重新 SSH 後：
 
 ```bash
-yadm config local.class
-yadm status --short
-TMUX=1 SSH_TTY= zsh -lic 'echo ZSH_AFTER_REBOOT_OK'
+{
+  yadm config local.class
+  yadm status --short
+  TMUX=1 SSH_TTY= zsh -lic 'echo ZSH_AFTER_REBOOT_OK'
+} 2>&1 | tee /mnt/yadm-results/post-reboot.txt
 ```
 
 desktop profile 再執行 GUI gate。
@@ -802,7 +823,8 @@ GUI session：
 ```bash
 pgrep -x niri
 pgrep -x waybar
-journalctl --user -b --no-pager | tail -200
+journalctl --user -b --no-pager | tail -200 \
+  | tee /mnt/yadm-results/journal-user-niri.txt
 ```
 
 Debian/Fedora/MSYS2 case 必須跑 negative contract。
@@ -870,7 +892,8 @@ GUI session：
 ```bash
 pgrep -x Hyprland
 pgrep -x waybar
-journalctl --user -b --no-pager | tail -300
+journalctl --user -b --no-pager | tail -300 \
+  | tee /mnt/yadm-results/journal-user-hyprland.txt
 ```
 
 ---
@@ -884,9 +907,11 @@ journalctl --user -b --no-pager | tail -300
 測試紀錄至少保存：
 
 ```bash
-yadm status --short
-test ! -d ~/HyDE
-find ~/.config -maxdepth 3 -type l -ls
+{
+  yadm status --short
+  test ! -d ~/HyDE
+  find ~/.config -maxdepth 3 -type l -ls
+} 2>&1 | tee /mnt/yadm-results/negative-contract.txt
 ```
 
 目前若 bootstrap 僅印出「僅支援 Arch，跳過」後繼續 `30-user` / `40-system`，標記為 **XFAIL**，直到 profile validation 移到 bootstrap 最前面。
@@ -926,11 +951,18 @@ Package install 成功不等於 desktop 成功。
 1. 以 GUI QEMU mode 重開 VM。
 2. 在 display manager 登入 `tester`。
 3. 確認 session process 存活 60 秒以上。
-4. 由 SSH 收集：
-   - `loginctl session-status`
-   - compositor / shell process
-   - `journalctl -b`
-   - `journalctl --user -b`
+4. 由 SSH 收集並保存到 shared directory：
+   ```bash
+   loginctl session-status \
+     2>&1 | tee /mnt/yadm-results/loginctl-session-status.txt
+
+   journalctl -b --no-pager \
+     > /mnt/yadm-results/journal-system.txt
+
+   journalctl --user -b --no-pager \
+     > /mnt/yadm-results/journal-user.txt
+   ```
+   compositor / shell process 的檢查結果也應以 `tee` 寫入同一目錄。
 5. Waybar profile 要確認 Waybar 存活。
 6. 登出再登入一次，確認不是 only-first-login 成功。
 
@@ -945,6 +977,20 @@ GUI_ENV_BLOCKED
 
 ## 14. 測試產物
 
+Guest 統一寫入：
+
+```text
+/mnt/yadm-results/
+```
+
+該目錄直接對應 host 的：
+
+```text
+~/yadm_dotfile/tests/results/<CASE>/
+```
+
+因此 VM 關機並刪除 disposable qcow2 後，測試產物仍保留在 host。
+
 每個 case 都建立：
 
 ```text
@@ -958,10 +1004,15 @@ results/QEMU-ARCH-HYPRLAND/
 ├── 30-user.log
 ├── 40-system.log
 ├── bootstrap-second.log
+├── before-second-run.sha256
+├── after-second-run.sha256
 ├── yadm-status.txt
+├── post-reboot.txt
 ├── packages.txt
+├── loginctl-session-status.txt
 ├── journal-system.txt
 ├── journal-user.txt
+├── negative-contract.txt
 └── result.txt
 ```
 
