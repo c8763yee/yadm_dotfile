@@ -436,6 +436,18 @@ bash -n \
 
 任何 syntax error 都直接 FAIL。
 
+Zsh 也要獨立做 syntax gate，避免把 shell fragment 的最後一個 command status 誤當成 loader error：
+
+```bash
+zsh -n ~/.zshenv##class.Base ~/.zshenv##class.Kde ~/.zshenv##class.Niri
+zsh -n ~/.config/zsh/.zshenv##class.Base \
+  ~/.config/zsh/.zshenv##class.Kde \
+  ~/.config/zsh/.zshenv##class.Niri
+
+find ~/.config/zsh/conf.d -type f -name '*.zsh' -exec zsh -n {} +
+zsh -n ~/.config/zsh/.zshrc ~/.config/zsh/plugin.zsh ~/.config/zsh/zinit.zsh
+```
+
 ### T30：Class / alternate gate
 
 ```bash
