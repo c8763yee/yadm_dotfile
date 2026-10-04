@@ -27,16 +27,33 @@ ensure_pipewire_jack_provider() {
 
 install_hyde() {
 	local hyde_dir="$BASE_DIR/HyDE"
+	local state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/yadm"
+	local installed_marker="$state_dir/hyde-install-complete"
 	local install_status=0
 
+	mkdir -p "$state_dir"
+
 	if [[ ! -d $hyde_dir ]]; then
-		# 首次：使用 HyDE defaults，避免 bootstrap 卡在互動式選單
 		git clone --depth 1 https://github.com/HyDE-Project/HyDE "$hyde_dir" || install_status=$?
-		(( install_status == 0 )) && bash "$hyde_dir/Scripts/install.sh" -d -r -s || install_status=$?
 	else
-		# 更新：拉取最新並只還原設定 (-r restore)
-		git -C "$hyde_dir" pull || install_status=$?
-		(( install_status == 0 )) && bash "$hyde_dir/Scripts/install.sh" -r || install_status=$?
+		git -C "$hyde_dir" pull --ff-only || install_status=$?
+	fi
+
+	if (( install_status != 0 )); then
+		return "$install_status"
+	fi
+
+	if [[ ! -f $installed_marker ]]; then
+		# A clone directory does not prove installation completed. Run the full
+		# non-interactive install until one full pass succeeds, then persist a
+		# marker outside the upstream checkout.
+		if bash "$hyde_dir/Scripts/install.sh" -d -r -s; then
+			touch "$installed_marker"
+		else
+			install_status=$?
+		fi
+	else
+		bash "$hyde_dir/Scripts/install.sh" -r || install_status=$?
 	fi
 
 	return "$install_status"
