@@ -8,7 +8,12 @@ configure_taiwan_mirror() {
 		if ! command -v reflector >/dev/null 2>&1; then
 			sudo pacman -Sy --noconfirm --needed reflector
 		fi
-		sudo reflector 			--country Taiwan 			--protocol http,https 			--latest 20 			--sort rate 			--save /etc/pacman.d/mirrorlist
+		sudo reflector \
+			--country Taiwan \
+			--protocol http,https \
+			--latest 20 \
+			--sort rate \
+			--save /etc/pacman.d/mirrorlist
 		;;
 	debian)
 		local -a apt_sources=(
@@ -19,7 +24,10 @@ configure_taiwan_mirror() {
 		local file
 		for file in "${apt_sources[@]}"; do
 			[[ -f "$file" ]] || continue
-			sudo sed -Ei 				-e 's#https?://deb\.debian\.org/debian/?#https://mirror.twds.com.tw/debian/#g' 				-e 's#https?://security\.debian\.org/debian-security/?#https://mirror.twds.com.tw/debian-security/#g' 				"$file"
+			sudo sed -Ei \
+				-e 's#https?://deb\.debian\.org/debian/?#https://mirror.twds.com.tw/debian/#g' \
+				-e 's#https?://security\.debian\.org/debian-security/?#https://mirror.twds.com.tw/debian-security/#g' \
+				"$file"
 		done
 		;;
 	ubuntu)
@@ -31,7 +39,10 @@ configure_taiwan_mirror() {
 		local file
 		for file in "${apt_sources[@]}"; do
 			[[ -f "$file" ]] || continue
-			sudo sed -Ei 				-e 's#https?://([[:alnum:]-]+\.)?archive\.ubuntu\.com/ubuntu/?#https://tw.archive.ubuntu.com/ubuntu/#g' 				-e 's#https?://security\.ubuntu\.com/ubuntu/?#https://tw.archive.ubuntu.com/ubuntu/#g' 				"$file"
+			sudo sed -Ei \
+				-e 's#https?://([[:alnum:]-]+\.)?archive\.ubuntu\.com/ubuntu/?#https://tw.archive.ubuntu.com/ubuntu/#g' \
+				-e 's#https?://security\.ubuntu\.com/ubuntu/?#https://tw.archive.ubuntu.com/ubuntu/#g' \
+				"$file"
 		done
 		;;
 	fedora)
@@ -92,7 +103,7 @@ pkg_install() {
 	esac
 }
 
-# 一次 Python 呼叫解析整份套件清單，避免 N 次 subprocess
+# 一次解析整份套件清單，避免 N 次 subprocess
 
 resolve_packages() {
 	local pkg_file="$1"
