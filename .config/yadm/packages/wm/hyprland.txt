@@ -20,6 +20,7 @@ swayidle
 dunst
 cliphist
 pipewire
+pipewire-jack
 pipewire-pulse
 wireplumber
 pavucontrol
