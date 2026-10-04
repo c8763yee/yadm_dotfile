@@ -547,6 +547,7 @@ bash ~/.config/yadm/bootstrap.d/10-packages \
 - 不允許因 hidden dependency 失敗。
 - 對應 distro package manager database 可查到 base package 已安裝。
 - Arch 的 cronie service 必須 enabled。
+- Arch 必須能執行 `command -v lua5.1` 與 `luarocks --version`；Lua 5.1 由官方 `extra/lua51` 提供，不依賴 AUR helper。
 - Fedora kernel debuginfo 若 repository 不提供，必須在 log 中能區分「optional repository unavailable」與真正 bootstrap failure。
 
 ### T60：Desktop stage
