@@ -424,6 +424,20 @@ After the guest has networking and yadm/git installed:
     ~/.config/yadm/bootstrap.d/30-user \
     ~/.config/yadm/bootstrap.d/40-system
 
+Mount the host result directory inside the guest:
+
+  sudo mkdir -p /mnt/yadm-results
+  sudo mount -t 9p -o trans=virtio,version=9p2000.L \
+    yadm-results /mnt/yadm-results
+
+Write test artifacts to:
+
+  /mnt/yadm-results/
+
+This maps directly to the host directory:
+
+  ~/yadm_dotfile/tests/results/$id/
+
 Follow docs/QEMU_TESTING.md for the assertions for this case.
 EOF
 
@@ -518,6 +532,8 @@ launch_case() {
     -drive "file=$vm_disk,format=qcow2,if=virtio"
     -netdev "user,id=net0,hostfwd=tcp::$SSH_PORT-:22"
     -device "virtio-net-pci,netdev=net0"
+    -fsdev "local,id=yadm_results,path=$result_dir,security_model=mapped-xattr"
+    -device "virtio-9p-pci,fsdev=yadm_results,mount_tag=yadm-results"
     -serial "file:$serial"
   )
 
