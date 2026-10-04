@@ -80,8 +80,13 @@ setup_claude_code() {
 	install_zhtw_mcp
 	claude mcp add --scope user zhtw-mcp -- "$HOME/.local/bin/zhtw-mcp"
 
-	git clone -b main https://github.com/kingkongshot/Pensieve.git "$HOME/.claude/skills/pensieve"
-	bash "$HOME/.claude/skills/pensieve/.src/scripts/init-project-data.sh"
+	local pensieve_dir="$HOME/.claude/skills/pensieve"
+	if [[ -d "$pensieve_dir" ]]; then
+		git -C "$pensieve_dir" pull --ff-only
+	else
+		git clone -b main https://github.com/kingkongshot/Pensieve.git "$pensieve_dir"
+	fi
+	bash "$pensieve_dir/.src/scripts/init-project-data.sh"
 	claude plugin marketplace add kingkongshot/Pensieve#claude-plugin
 	claude plugin install pensieve@kingkongshot-marketplace --scope user
 }
