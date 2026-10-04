@@ -158,6 +158,7 @@ download_to() {
   local target="$2"
 
   if [[ -f "$target" ]]; then
+    [[ -f "$target.sha256" ]] || sha256sum "$target" >"$target.sha256"
     return 0
   fi
 
@@ -169,7 +170,9 @@ download_to() {
   echo "Downloading base image:" >&2
   echo "  $url" >&2
   echo "  -> $target" >&2
-  curl -fL --retry 3 --continue-at - "$url" -o "$target"
+  local partial="$target.part"
+  curl -fL --retry 3 --continue-at - "$url" -o "$partial"
+  mv -f -- "$partial" "$target"
   sha256sum "$target" >"$target.sha256"
 }
 
