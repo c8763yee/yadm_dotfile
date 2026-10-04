@@ -24,7 +24,7 @@
 | Arch | `arch` | pacman + yay | 是 |
 | Debian family | `debian`, `ubuntu`, `raspbian` | apt | 是；Raspbian 另做 ARM 補充測試 |
 | Fedora | `fedora` | dnf | 是 |
-| MSYS2 | `msys2` | pacman | 否；只保證 package-layer 測試，完整 bootstrap 為 negative contract |
+| MSYS2 | `msys2` | pacman | 暫不納入目前 QEMU runner |
 
 Debian family 的主要 QEMU 代表為 Debian；Ubuntu 必須至少再跑一次相容性 case。Raspbian 與 Debian/Ubuntu 共用 package resolver 分支，因此核心矩陣以 Debian family 為一組，另以 `qemu-system-aarch64` 做可選的 Raspberry Pi OS smoke test。
 
@@ -60,7 +60,7 @@ Debian family 的主要 QEMU 代表為 Debian；Ubuntu 必須至少再跑一次�
 | Arch | PASS | PASS | PASS | PASS |
 | Debian family | PASS | PASS | NEGATIVE | NEGATIVE |
 | Fedora | PASS | PASS | NEGATIVE | NEGATIVE |
-| MSYS2 | XFAIL：package-layer PASS、完整 bootstrap 應拒絕 | NEGATIVE | NEGATIVE | NEGATIVE |
+
 
 另外增加：
 
@@ -68,7 +68,7 @@ Debian family 的主要 QEMU 代表為 Debian；Ubuntu 必須至少再跑一次�
 |---|---|---|
 | Ubuntu + Base | SUPPLEMENTAL PASS | 驗證 `ubuntu` alias |
 | Ubuntu + Kde | SUPPLEMENTAL PASS | 驗證 apt/KDE 套件名稱 |
-| Raspberry Pi OS arm64 + Base | SUPPLEMENTAL | 驗證 `raspbian` alias 與非 x86_64 基礎路徑 |
+| Raspberry Pi OS arm64 + Base | SUPPLEMENTAL / future | 只測 Base；不納入目前 x86-64 runner |
 
 ### 2.1 不支援組合的規則
 
@@ -85,6 +85,55 @@ Debian family 的主要 QEMU 代表為 Debian；Ubuntu 必須至少再跑一次�
 若程式只是輸出「僅支援 Arch，跳過」然後繼續執行其他 stage，這不算 negative test 通過；應列為 XFAIL / defect，直到 top-level profile validation 完成。
 
 ---
+
+
+## 2.2 現階段 QEMU runner 範圍
+
+目前實作的 `tests/run-qemu-matrix.sh` **只執行 x86-64**：
+
+| OS | Base | KDE | Niri | Hyprland |
+|---|---:|---:|---:|---:|
+| Arch | PASS | PASS | PASS | PASS |
+| Debian | PASS | PASS | NEGATIVE | NEGATIVE |
+| Fedora | PASS | PASS | NEGATIVE | NEGATIVE |
+| Ubuntu | SUPPLEMENTAL | SUPPLEMENTAL | — | — |
+
+Raspberry Pi OS 後續只增加 `arm64 + Base` supplemental case；MSYS2 暫不使用。
+
+runner 的儲存位置固定為：
+
+```text
+~/yadm_dotfile/tests/
+├── images/    # 保留：下載好的 base images
+├── vms/       # 暫存：目前 case 的 disposable qcow2
+├── seeds/     # 暫存：cloud-init seed
+├── logs/      # 保留：serial logs
+├── results/   # 保留：manifest / QEMU command / runner result
+└── ssh/       # 保留：測試用 SSH key
+```
+
+預設直接依矩陣順序執行：
+
+```bash
+./tests/run-qemu-matrix.sh
+```
+
+也可分組或單獨執行：
+
+```bash
+./tests/run-qemu-matrix.sh --list
+./tests/run-qemu-matrix.sh --group arch
+./tests/run-qemu-matrix.sh --case QEMU-ARCH-HYPRLAND
+./tests/run-qemu-matrix.sh --from QEMU-DEBIAN-BASE
+```
+
+每個 case 都以 immutable base image 建立 qcow2 overlay。完成 guest 內測試後手動：
+
+```bash
+sudo poweroff
+```
+
+QEMU process 結束後 runner 會立即刪除該 case 的 `tests/vms/<CASE>.qcow2` 與 cloud-init seed，再直接啟動下一個 case。base image、logs 與 results 會保留。
 
 ## 3. Host 需求
 
@@ -879,11 +928,7 @@ ENV_BLOCKED
 12. Fedora + Hyprland  (negative)
 13. Ubuntu + Base      (supplemental)
 14. Ubuntu + Kde       (supplemental)
-15. MSYS2 + Base       (package layer / XFAIL full bootstrap)
-16. MSYS2 + Kde        (negative)
-17. MSYS2 + Niri       (negative)
-18. MSYS2 + Hyprland   (negative)
-19. Raspberry Pi OS arm64 + Base (supplemental)
+15. Raspberry Pi OS arm64 + Base (future supplemental；不由目前 runner 執行)
 ```
 
 Hyprland 放在 Arch 最後，因為 HyDE install 成本最高，而且它同時涵蓋最多 ownership assertions。
