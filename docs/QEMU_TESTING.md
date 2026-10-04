@@ -564,11 +564,35 @@ test -f ~/.config/yadm/crontab
 
 Zsh：
 
+先明確驗證 startup target 可讀，不能只依賴 `zsh -lic 'echo ZSH_OK'` 的 exit status。Zsh startup file 即使回傳非 0，仍可能繼續執行 `-c` 指定的命令，最後讓 `echo` 把 shell exit status 覆蓋成 0。
+
+Base / Kde / Niri：
+
 ```bash
-TMUX=1 SSH_TTY= zsh -lic 'echo ZSH_OK'
+test -r ~/.zshenv
+test -r ~/.config/zsh/.zshenv
+
+zsh -fc 'source ~/.config/zsh/.zshenv'
+zsh -fc 'source ~/.zshenv'
+
+TMUX=1 SSH_TTY= zsh -lic \
+  '[[ -r $ZDOTDIR/.zshenv ]] || exit 1; echo ZSH_OK'
 ```
 
-必須輸出 `ZSH_OK` 且 exit 0。
+Hyprland：
+
+```bash
+test -r ~/.zshenv
+test -r ~/.config/zsh/.zshenv
+
+cmp ~/.zshenv ~/HyDE/Configs/.zshenv
+cmp ~/.config/zsh/.zshenv ~/HyDE/Configs/.config/zsh/.zshenv
+
+TMUX=1 SSH_TTY= zsh -lic \
+  '[[ -r $ZDOTDIR/.zshenv ]] || exit 1; echo ZSH_OK'
+```
+
+以上命令都必須 exit 0，最後一條必須輸出 `ZSH_OK`。
 
 ### T80：System stage
 
