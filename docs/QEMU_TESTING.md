@@ -546,6 +546,29 @@ bash ~/.config/yadm/bootstrap.d/10-packages \
   - Fedora：DNF `fedora` / `updates` 與 debuginfo override 使用 `https://mirror.twds.com.tw/`。
 - Mirror 設定不得出現 `ftp://` 或 `rsync://`。
 
+驗證範例：
+
+```bash
+case "$DISTRO" in
+arch)
+  grep -E '^[[:space:]]*Server[[:space:]]*=' /etc/pacman.d/mirrorlist
+  ! grep -E '^[[:space:]]*Server[[:space:]]*=[[:space:]]*(ftp|rsync)://' \
+    /etc/pacman.d/mirrorlist
+  ;;
+debian|ubuntu)
+  grep -RhsE '^(deb |URIs:).*https?://' \
+    /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null || true
+  ! grep -RhsE '^(deb |URIs:).*(ftp|rsync)://' \
+    /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null
+  ;;
+fedora)
+  cat /etc/dnf/repos.override.d/99-yadm-taiwan.repo
+  ! grep -E '(ftp|rsync)://' /etc/dnf/repos.override.d/99-yadm-taiwan.repo
+  sudo dnf makecache --refresh
+  ;;
+esac
+```
+
 
 ### T55：Zsh syntax gate
 
