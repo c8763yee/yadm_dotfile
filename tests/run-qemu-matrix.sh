@@ -166,9 +166,9 @@ download_to() {
     return 1
   fi
 
-  echo "Downloading base image:"
-  echo "  $url"
-  echo "  -> $target"
+  echo "Downloading base image:" >&2
+  echo "  $url" >&2
+  echo "  -> $target" >&2
   curl -fL --retry 3 --continue-at - "$url" -o "$target"
   sha256sum "$target" >"$target.sha256"
 }
