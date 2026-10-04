@@ -436,17 +436,7 @@ bash -n \
 
 任何 syntax error 都直接 FAIL。
 
-Zsh 也要獨立做 syntax gate，避免把 shell fragment 的最後一個 command status 誤當成 loader error：
-
-```bash
-zsh -n ~/.zshenv##class.Base ~/.zshenv##class.Kde ~/.zshenv##class.Niri
-zsh -n ~/.config/zsh/.zshenv##class.Base \
-  ~/.config/zsh/.zshenv##class.Kde \
-  ~/.config/zsh/.zshenv##class.Niri
-
-find ~/.config/zsh/conf.d -type f -name '*.zsh' -exec zsh -n {} +
-zsh -n ~/.config/zsh/.zshrc ~/.config/zsh/plugin.zsh ~/.config/zsh/zinit.zsh
-```
+> T20 是 **pre-bootstrap gate**。Guest baseline 刻意不預裝 Zsh，因此這裡不得執行 `zsh -n`；否則會破壞 hidden-dependency 測試。Zsh syntax gate 延後到 T50 安裝 base packages 之後的 T55。
 
 ### T30：Class / alternate gate
 
@@ -549,6 +539,35 @@ bash ~/.config/yadm/bootstrap.d/10-packages \
 - Arch 的 cronie service 必須 enabled。
 - Arch 必須能執行 `command -v lua5.1` 與 `luarocks --version`；Lua 5.1 由官方 `extra/lua51` 提供，不依賴 AUR helper。
 - Fedora kernel debuginfo 若 repository 不提供，必須在 log 中能區分「optional repository unavailable」與真正 bootstrap failure。
+
+
+### T55：Zsh syntax gate
+
+T50 完成後，Zsh 必須是由 bootstrap 自己安裝進 guest：
+
+```bash
+command -v zsh
+zsh --version
+```
+
+接著才執行 Zsh config syntax gate：
+
+```bash
+zsh -n ~/.zshenv##class.Base ~/.zshenv##class.Kde ~/.zshenv##class.Niri
+zsh -n ~/.config/zsh/.zshenv##class.Base \
+  ~/.config/zsh/.zshenv##class.Kde \
+  ~/.config/zsh/.zshenv##class.Niri
+
+find ~/.config/zsh/conf.d -type f -name '*.zsh' -exec zsh -n {} +
+zsh -n ~/.config/zsh/.zshrc ~/.config/zsh/plugin.zsh ~/.config/zsh/zinit.zsh
+```
+
+判定：
+
+- `command -v zsh` 必須成功。
+- 所有 `zsh -n` 必須 exit 0。
+- 不得為了讓 T55 通過而在 guest baseline 預裝 Zsh。
+- Host-side CI 的 Zsh lint 不受此限制；它屬於 repository static analysis，不是 guest hidden-dependency 測試。
 
 ### T60：Desktop stage
 
