@@ -68,3 +68,9 @@ plasma:
   ubuntu: kde-plasma-desktop
   fedora: plasma-desktop
 
+
+lua51:
+  arch: lua51
+  debian: ~
+  ubuntu: ~
+  fedora: ~
