@@ -35,6 +35,7 @@ yarn
 
 # Lua
 luarocks
+lua51
 
 # Python tools
 pre-commit
