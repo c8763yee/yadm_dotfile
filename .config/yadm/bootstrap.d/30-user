@@ -12,16 +12,73 @@ setup_zsh() {
 	[[ $SHELL != *zsh* ]] && chsh -s "$(command -v zsh)"
 }
 
+install_zhtw_mcp() {
+	local base="https://github.com/sysprog21/zhtw-mcp/releases/download/latest"
+	local asset=""
+	local tmpdir=""
+
+	case "$(uname -sm)" in
+	"Linux x86_64")
+		asset="zhtw-mcp-x86_64-unknown-linux-gnu.tar.gz"
+		;;
+	"Linux aarch64")
+		asset="zhtw-mcp-aarch64-unknown-linux-gnu.tar.gz"
+		;;
+	"Darwin arm64")
+		asset="zhtw-mcp-aarch64-apple-darwin.tar.gz"
+		;;
+	*)
+		echo "No zhtw-mcp pre-built binary for $(uname -sm)" >&2
+		return 1
+		;;
+	esac
+
+	tmpdir=$(mktemp -d) || return 1
+	if ! curl -fsSL "$base/$asset" -o "$tmpdir/$asset" ||
+		! curl -fsSL "$base/SHA256SUMS" -o "$tmpdir/SHA256SUMS"; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+
+	if command -v sha256sum >/dev/null 2>&1; then
+		if ! (cd "$tmpdir" && grep "  $asset\$" SHA256SUMS | sha256sum -c -); then
+			rm -rf "$tmpdir"
+			return 1
+		fi
+	elif command -v shasum >/dev/null 2>&1; then
+		if ! (cd "$tmpdir" && grep "  $asset\$" SHA256SUMS | shasum -a 256 -c -); then
+			rm -rf "$tmpdir"
+			return 1
+		fi
+	else
+		echo "sha256sum or shasum is required to verify zhtw-mcp" >&2
+		rm -rf "$tmpdir"
+		return 1
+	fi
+
+	if ! tar -xzf "$tmpdir/$asset" -C "$tmpdir" zhtw-mcp; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+
+	mkdir -p "$HOME/.local/bin"
+	install -m 0755 "$tmpdir/zhtw-mcp" "$HOME/.local/bin/zhtw-mcp"
+	rm -rf "$tmpdir"
+
+	"$HOME/.local/bin/zhtw-mcp" --help >/dev/null
+}
+
 setup_claude_code() {
 	curl -fsSL https://claude.ai/install.sh | bash
 	curl -fsSL https://bun.sh/install | bash
 
-	[[ ! -d zhtw-mcp ]] && git clone https://github.com/sysprog21/zhtw-mcp.git || git -C zhtw-mcp pull
-	pushd zhtw-mcp || exit
-	make
-	claude mcp add --scope user zhtw-mcp -- target/release/zhtw-mcp
-	popd || exit
+	# Native installers update shell startup files, but this bootstrap keeps
+	# running in the same process. Refresh PATH before invoking them.
+	export PATH="$HOME/.local/bin:$HOME/.bun/bin:$PATH"
+	hash -r
 
+	install_zhtw_mcp
+	claude mcp add --scope user zhtw-mcp -- "$HOME/.local/bin/zhtw-mcp"
 
 	git clone -b main https://github.com/kingkongshot/Pensieve.git "$HOME/.claude/skills/pensieve"
 	bash "$HOME/.claude/skills/pensieve/.src/scripts/init-project-data.sh"
