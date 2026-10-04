@@ -2,6 +2,29 @@
 . "${XDG_CONFIG_HOME:-$HOME/.config}/yadm/lib/env.sh"
 . "$XDG_CONFIG_HOME/yadm/lib/packages.sh"
 
+ensure_pipewire_jack_provider() {
+	[[ "$DISTRO" == "arch" ]] || return 0
+
+	local -a targets=(pipewire-jack)
+
+	# If a 32-bit JACK provider is already installed, migrate both sides in
+	# the same transaction so lib32-jack2 does not pin jack2.
+	if pacman -Qq lib32-jack2 >/dev/null 2>&1; then
+		targets+=(lib32-pipewire-jack)
+	fi
+
+	if pacman -Qq jack2 >/dev/null 2>&1 ||
+		pacman -Qq lib32-jack2 >/dev/null 2>&1; then
+		echo "Replacing JACK provider with pipewire-jack before HyDE install"
+
+		# pacman's conflict-removal question defaults to No under --noconfirm.
+		# ALPM question bit 4 is CONFLICT_PKG, so answer only that class Yes.
+		sudo pacman -S --needed --noconfirm --ask=4 "${targets[@]}"
+	else
+		sudo pacman -S --needed --noconfirm "${targets[@]}"
+	fi
+}
+
 install_hyde() {
 	local hyde_dir="$BASE_DIR/HyDE"
 	local install_status=0
@@ -138,6 +161,7 @@ install_wm_packages() {
 	Hyprland)
 		[[ "$DISTRO" != "arch" ]] && echo "Hyprland 僅支援 Arch Linux，跳過 WM 安裝" && return
 		install_yay
+		ensure_pipewire_jack_provider || return 1
 		install_packages "$wm_txt"
 		yay -S --noconfirm --needed $(grep -v '^#' "$PACKAGES_DIR/wm/hyprland-aur.txt")
 		rustup install stable
