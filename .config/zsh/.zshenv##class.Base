@@ -3,8 +3,14 @@
 custom_dir="${ZDOTDIR:-$HOME/.config/zsh}/conf.d"
 for file in "$custom_dir"/**/*.zsh(N); do
   [[ $file == */autocompletion/* ]] && (( ! $+functions[compdef] )) && continue
-  [ -r "$file" ] && source "$file"
+  if [[ -r "$file" ]]; then
+    source "$file" || return 1
+  fi
 done
 unset custom_dir file
 
-[[ -r "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+if [[ -r "$HOME/.cargo/env" ]]; then
+  source "$HOME/.cargo/env" || return 1
+fi
+
+return 0
