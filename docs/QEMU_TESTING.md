@@ -105,7 +105,7 @@ runner 的儲存位置固定為：
 ```text
 ~/yadm_dotfile/tests/
 ├── images/    # 保留：下載好的 base images
-├── vms/       # 暫存：目前 case 的 disposable qcow2
+├── vms/       # 暫存：目前 case 的 disposable VM disk
 ├── seeds/     # 暫存：cloud-init seed
 ├── logs/      # 保留：serial logs
 ├── results/   # 保留：manifest / QEMU command / runner result
@@ -127,13 +127,13 @@ runner 的儲存位置固定為：
 ./tests/run-qemu-matrix.sh --from QEMU-DEBIAN-BASE
 ```
 
-每個 case 都以 immutable base image 建立 qcow2 overlay。完成 guest 內測試後手動：
+每個 case 都從 immutable base image 建立 disposable VM disk：Arch / Debian / Fedora 直接複製 qcow2；Ubuntu 因 base 為 `.img`，仍建立 qcow2 overlay。完成 guest 內測試後手動：
 
 ```bash
 sudo poweroff
 ```
 
-QEMU process 結束後 runner 會立即刪除該 case 的 `tests/vms/<CASE>.qcow2` 與 cloud-init seed，再直接啟動下一個 case。base image、logs 與 results 會保留。
+QEMU process 結束後 runner 會立即刪除該 case 的 `tests/vms/<CASE>.qcow2` 與 cloud-init seed，再直接啟動下一個 case。base image、logs 與 results 會保留。Arch / Debian / Fedora 的 VM disk 是獨立 qcow2 複本；Ubuntu 則是以原始 `.img` 為 backing file 的 qcow2 overlay。
 
 ## 3. Host 需求
 
@@ -176,8 +176,9 @@ ssh -V
 2. 下載後記錄實際 URL。
 3. 記錄 SHA256。
 4. 建立 immutable base image。
-5. 每個 case 使用 qcow2 overlay。
-6. 測試結束只刪 overlay，不修改 base image。
+5. Arch / Debian / Fedora：每個 case 將 qcow2 base 複製成 `tests/vms/<CASE>.qcow2`，QEMU 直接使用該複本。
+6. Ubuntu：base 為 `.img`，每個 case 建立 qcow2 overlay。
+7. 測試結束刪除 disposable VM disk，不修改 base image。
 
 建議目錄：
 
@@ -269,7 +270,7 @@ qemu-system-x86_64 \
   -cpu host \
   -m "$VM_MEMORY" \
   -smp "$VM_CPUS" \
-  -drive "file=$OVERLAY,format=qcow2,if=virtio" \
+  -drive "file=$VM_DISK,format=qcow2,if=virtio" \
   -netdev "user,id=net0,hostfwd=tcp::$SSH_PORT-:22" \
   -device virtio-net-pci,netdev=net0 \
   -display none \
@@ -286,7 +287,7 @@ qemu-system-x86_64 \
   -cpu host \
   -m "$VM_MEMORY" \
   -smp "$VM_CPUS" \
-  -drive "file=$OVERLAY,format=qcow2,if=virtio" \
+  -drive "file=$VM_DISK,format=qcow2,if=virtio" \
   -netdev "user,id=net0,hostfwd=tcp::$SSH_PORT-:22" \
   -device virtio-net-pci,netdev=net0 \
   -device virtio-vga-gl \
