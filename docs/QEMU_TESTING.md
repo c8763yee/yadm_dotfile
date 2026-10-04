@@ -763,6 +763,16 @@ yadm status --short
 
 而失敗。
 
+Hyprland case 額外驗證：
+
+```bash
+test -f "${XDG_STATE_HOME:-$HOME/.local/state}/yadm/hyde-install-complete"
+pacman -Q pipewire-jack
+! pacman -Q jack2
+```
+
+`~/HyDE` 目錄存在本身不能代表安裝成功。只有完整 HyDE install pass 成功後才會建立 `hyde-install-complete` marker；若首次安裝中途失敗，下一次 bootstrap 必須重新執行完整 install，而不是誤走 restore-only path。
+
 有意義的 runtime-generated file 可以變更，但必須排除在 immutable hash set 之外並在測試文件中列明。
 
 ### T110：Reboot persistence
