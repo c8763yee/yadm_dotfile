@@ -37,6 +37,11 @@ Bootstrap stages are independent and ordered:
 
 Shared package-manager primitives live in `.config/yadm/lib/`. Do not add config-copy or symlink deployment code back into bootstrap; if a file belongs in `$HOME`, track it at that path with yadm.
 
+## Testing
+
+- [QEMU full test matrix](docs/QEMU_TESTING.md) — OS group × desktop profile, ownership, idempotency, reboot, GUI, and negative-contract tests.
+- `.github/workflows/hydevm-preflight.yml` — fast Arch + Hyprland / HyDE ownership preflight.
+
 ## References
 
 - [Martin3/My-Linux-Config](https://github.com/Martins3/My-Linux-Config)
