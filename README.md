@@ -37,6 +37,48 @@ Bootstrap stages are independent and ordered:
 
 Shared package-manager primitives live in `.config/yadm/lib/`. Do not add config-copy or symlink deployment code back into bootstrap; if a file belongs in `$HOME`, track it at that path with yadm.
 
+## Migrating from the legacy layout
+
+The legacy layout kept most configuration under `~/Config` and `~/Scripts`, then deployed it with symlinks or copies. The current layout tracks the final `$HOME` paths directly with yadm; `Scripts/install.sh` is intentionally gone.
+
+For an existing checkout, do not force the update over local files. First inspect local changes, fetch `main`, and remove only legacy symlinks that still point into `~/Config`:
+
+```bash
+yadm status --short
+yadm fetch origin
+
+for path in \
+  "$HOME/.config/nvim" \
+  "$HOME/.config/zsh" \
+  "$HOME/.config/niri" \
+  "$HOME/.config/waybar" \
+  "$HOME/.config/swaylock" \
+  "$HOME/.config/fastfetch" \
+  "$HOME/.gdbinit" \
+  "$HOME/.gitconfig" \
+  "$HOME/.tmux.conf" \
+  "$HOME/.tmux.conf.local"
+do
+  [ -L "$path" ] || continue
+  case "$(readlink -f -- "$path")" in
+    "$HOME/Config"/*) rm -- "$path" ;;
+  esac
+done
+
+yadm pull --ff-only
+```
+
+If Git reports an untracked path that would be overwritten, move that path to a backup first and retry; do not use a forced checkout as a migration shortcut.
+
+Then select the target profile and run the new staged bootstrap:
+
+```bash
+YADM_CLASS=Base yadm bootstrap
+# or: Kde / Niri / Hyprland
+```
+
+After the first successful run, verify `yadm status --short`. Bootstrap must not mutate tracked files.
+
 ## Testing
 
 - [QEMU full test matrix](docs/QEMU_TESTING.md) — OS group × desktop profile, ownership, idempotency, reboot, GUI, and negative-contract tests.
