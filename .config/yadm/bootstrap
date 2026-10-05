@@ -4,7 +4,7 @@
 echo "偵測到 Distro：$PRETTY_NAME"
 echo ""
 
-WM_DIR="$HOME/Scripts/packages/wm"
+WM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/yadm/packages/wm"
 
 if [ -n "$YADM_CLASS" ]; then
     CLASS="$YADM_CLASS"
@@ -15,8 +15,12 @@ else
         # 只列主要清單，跳過 -aur.txt
         case "$f" in *-aur.txt) continue ;; esac
         name=$(basename "$f" .txt)
-        # capitalize first letter via python3
-        label=$(python3 -c "import sys; print(sys.argv[1].capitalize())" "$name")
+        case "$name" in
+            hyprland) label="Hyprland" ;;
+            kde) label="Kde" ;;
+            niri) label="Niri" ;;
+            *) label="$name" ;;
+        esac
         echo "  $i) $label"
         eval "WM_$i=$label"
         i=$((i + 1))
@@ -32,7 +36,13 @@ fi
 [ -z "$CLASS" ] && echo "無效選項，使用 Base" && CLASS="Base"
 
 yadm config local.class "$CLASS"
+yadm alt
 echo "已設定 class: $CLASS"
 echo ""
 
-bash "$HOME/Scripts/install.sh" "$HOME"
+BOOTSTRAP_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/yadm/bootstrap.d"
+for script in "$BOOTSTRAP_DIR"/*; do
+    [ -x "$script" ] || continue
+    echo "==> $(basename "$script")"
+    "$script" || exit $?
+done

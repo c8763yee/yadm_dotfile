@@ -1,0 +1,30 @@
+name: Zsh config lint
+
+on:
+  push:
+    paths:
+      - '.config/zsh/**'
+      - '.zshenv##class.*'
+      - '.github/workflows/zsh-config-lint.yml'
+  pull_request:
+    paths:
+      - '.config/zsh/**'
+      - '.zshenv##class.*'
+      - '.github/workflows/zsh-config-lint.yml'
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Zsh
+        run: sudo apt-get update && sudo apt-get install -y zsh
+
+      - name: Check Zsh syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' files < <(find .config/zsh -type f -name '*.zsh' -print0)
+          files+=(.zshenv##class.Base .zshenv##class.Kde .zshenv##class.Niri)
+          zsh -n "${files[@]}"

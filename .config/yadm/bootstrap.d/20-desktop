@@ -1,0 +1,238 @@
+#!/bin/bash
+. "${XDG_CONFIG_HOME:-$HOME/.config}/yadm/lib/env.sh"
+. "$XDG_CONFIG_HOME/yadm/lib/packages.sh"
+
+ensure_pipewire_jack_provider() {
+	[[ "$DISTRO" == "arch" ]] || return 0
+
+	local -a targets=(pipewire-jack)
+
+	# If a 32-bit JACK provider is already installed, migrate both sides in
+	# the same transaction so lib32-jack2 does not pin jack2.
+	if pacman -Qq lib32-jack2 >/dev/null 2>&1; then
+		targets+=(lib32-pipewire-jack)
+	fi
+
+	if pacman -Qq jack2 >/dev/null 2>&1 ||
+		pacman -Qq lib32-jack2 >/dev/null 2>&1; then
+		echo "Replacing JACK provider with pipewire-jack before HyDE install"
+
+		# pacman's conflict-removal question defaults to No under --noconfirm.
+		# ALPM question bit 4 is CONFLICT_PKG, so answer only that class Yes.
+		sudo pacman -S --needed --noconfirm --ask=4 "${targets[@]}"
+	else
+		sudo pacman -S --needed --noconfirm "${targets[@]}"
+	fi
+}
+
+install_hyde() {
+	local hyde_dir="$BASE_DIR/HyDE"
+	local state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/yadm"
+	local installed_marker="$state_dir/hyde-install-complete"
+	local install_status=0
+
+	mkdir -p "$state_dir"
+
+	if [[ ! -d $hyde_dir ]]; then
+		git clone --depth 1 https://github.com/HyDE-Project/HyDE "$hyde_dir" || install_status=$?
+	else
+		git -C "$hyde_dir" pull --ff-only || install_status=$?
+	fi
+
+	if (( install_status != 0 )); then
+		return "$install_status"
+	fi
+
+	if [[ ! -f $installed_marker ]]; then
+		# A clone directory does not prove installation completed. Run the full
+		# non-interactive install until one full pass succeeds, then persist a
+		# marker outside the upstream checkout.
+		if bash "$hyde_dir/Scripts/install.sh" -d -r -s; then
+			touch "$installed_marker"
+		else
+			install_status=$?
+		fi
+	else
+		bash "$hyde_dir/Scripts/install.sh" -r || install_status=$?
+	fi
+
+	return "$install_status"
+}
+
+# 把 custom/powerdraw 注入每個 waybar layout 的最右欄位 (冪等)
+
+inject_waybar_powerdraw() {
+	python3 - "$XDG_CONFIG_HOME/waybar/layouts" "$HOME/.local/share/waybar/layouts" <<'PYEOF'
+import sys, os, json
+
+MODULE = "custom/powerdraw"
+
+def strip_jsonc(text):
+    out = []
+    i, n = 0, len(text)
+    in_str = False
+    esc = False
+    while i < n:
+        c = text[i]
+        if in_str:
+            out.append(c)
+            if esc:
+                esc = False
+            elif c == "\\":
+                esc = True
+            elif c == '"':
+                in_str = False
+            i += 1
+            continue
+        if c == '"':
+            in_str = True
+            out.append(c)
+            i += 1
+        elif c == "/" and i + 1 < n and text[i + 1] == "/":
+            i += 2
+            while i < n and text[i] != "\n":
+                i += 1
+        elif c == "/" and i + 1 < n and text[i + 1] == "*":
+            i += 2
+            while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
+                i += 1
+            i += 2
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+
+def drop_trailing_commas(text):
+    res = []
+    in_str = False
+    esc = False
+    for idx, c in enumerate(text):
+        if in_str:
+            res.append(c)
+            if esc:
+                esc = False
+            elif c == "\\":
+                esc = True
+            elif c == '"':
+                in_str = False
+            continue
+        if c == '"':
+            in_str = True
+            res.append(c)
+        elif c == ",":
+            j = idx + 1
+            while j < len(text) and text[j] in " \t\r\n":
+                j += 1
+            if j < len(text) and text[j] in "}]":
+                continue  # 丟掉這個 trailing comma
+            res.append(c)
+        else:
+            res.append(c)
+    return "".join(res)
+
+def target_list(data):
+    """回傳該放 powerdraw 的 list (最右 group 的 modules，或 modules-right 本身)。"""
+    mr = data.get("modules-right")
+    if not isinstance(mr, list):
+        return None
+    if not mr:
+        return mr  # 空的 right 區段，直接放成唯一最右模組
+    last = mr[-1]
+    if isinstance(last, str) and last.startswith("group/"):
+        grp = data.get(last)
+        if isinstance(grp, dict) and isinstance(grp.get("modules"), list):
+            return grp["modules"]
+    return mr
+
+for layout_dir in sys.argv[1:]:
+    if not os.path.isdir(layout_dir):
+        continue
+    for root, _, files in os.walk(layout_dir):
+        for fn in files:
+            if not fn.endswith(".jsonc"):
+                continue
+            path = os.path.join(root, fn)
+            try:
+                raw = open(path, encoding="utf-8").read()
+                data = json.loads(drop_trailing_commas(strip_jsonc(raw)))
+            except Exception as e:
+                print(f"skip {path}: {e}")
+                continue
+            tgt = target_list(data)
+            if tgt is None or MODULE in tgt:
+                continue
+            tgt.append(MODULE)
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+                f.write("\n")
+            print(f"injected {MODULE} -> {path}")
+PYEOF
+}
+
+install_wm_packages() {
+	local class="$1"
+	local wm_txt="$PACKAGES_DIR/wm/${class,,}.txt"
+	[[ ! -f "$wm_txt" ]] && return
+
+	case "$class" in
+	Hyprland)
+		[[ "$DISTRO" != "arch" ]] && echo "Hyprland 僅支援 Arch Linux，跳過 WM 安裝" && return
+		install_yay || return 1
+		ensure_pipewire_jack_provider || return 1
+		install_packages "$wm_txt" || return 1
+		rustup default stable || return 1
+		yay -S --noconfirm --needed $(grep -v '^#' "$PACKAGES_DIR/wm/hyprland-aur.txt") || return 1
+		sudo cp /etc/xdg/menus/arch-applications.menu /etc/xdg/menus/applications.menu
+		kbuildsycoca6 --noincremental
+		install_hyde || return 1
+		;;
+	Kde)
+		install_packages "$wm_txt" || return 1
+		sudo systemctl enable sddm || return 1
+		if [[ "$DISTRO" == "arch" ]]; then
+			pkg_install archlinux-xdg-menu || return 1
+			sudo cp /etc/xdg/menus/arch-applications.menu /etc/xdg/menus/applications.menu || return 1
+			kbuildsycoca6 --noincremental || return 1
+		fi
+		;;
+	Niri)
+		[[ "$DISTRO" != "arch" ]] && echo "Niri 僅支援 Arch Linux，跳過 WM 安裝" && return
+		install_yay || return 1
+		install_packages "$wm_txt" || return 1
+		yay -S --noconfirm --needed $(grep -v '^#' "$PACKAGES_DIR/wm/niri-aur.txt") || return 1
+		sudo systemctl enable --now cronie
+		;;
+	esac
+	return 0
+}
+
+move_config() {
+	local class="$1"
+
+	if [[ $class == "Hyprland" ]]; then
+		# HyDE discovers user modules from ~/.config/waybar/modules.
+		command -v hyde-shell >/dev/null && hyde-shell waybar --update || :
+		inject_waybar_powerdraw
+
+		ln -sf "$BASE_DIR/Config/hypr/userprefs.conf" "$XDG_CONFIG_HOME/hypr/userprefs.conf"
+		ln -sf "$BASE_DIR/Config/hypr/custom" "$XDG_CONFIG_HOME/hypr"
+	else
+		if [[ $class == "Kde" ]]; then
+			local plasmoid plugin_id
+			for plasmoid in "$BASE_DIR/Config/plasma/plasmoids"/*; do
+				[[ -f $plasmoid/metadata.json ]] || continue
+				plugin_id=$(basename "$plasmoid")
+				if kpackagetool6 --type Plasma/Applet --show "$plugin_id" >/dev/null 2>&1; then
+					kpackagetool6 --type Plasma/Applet --upgrade "$plasmoid"
+				else
+					kpackagetool6 --type Plasma/Applet --install "$plasmoid"
+				fi
+			done
+		fi
+
+	fi
+}
+
+class=$(yadm config local.class 2>/dev/null || echo "Base")
+install_wm_packages "$class" || exit 1
+move_config "$class"

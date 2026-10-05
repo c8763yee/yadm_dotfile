@@ -1,0 +1,152 @@
+#!/bin/bash
+. "${XDG_CONFIG_HOME:-$HOME/.config}/yadm/lib/env.sh"
+
+install_oh_my_tmux() {
+	if [[ ! -d $HOME/.tmux/plugins/tpm ]]; then
+		mkdir -p "$HOME/.tmux/plugins"
+		git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+	fi
+}
+
+setup_zsh() {
+	local user current_shell zsh_path
+	user=$(id -un) || return 1
+	current_shell=$(getent passwd "$user" | cut -d: -f7) || return 1
+	zsh_path=$(command -v zsh) || return 1
+	[[ "$current_shell" == "$zsh_path" ]] && return 0
+	sudo chsh -s "$zsh_path" "$user" || return 1
+	[[ $(getent passwd "$user" | cut -d: -f7) == "$zsh_path" ]]
+}
+
+install_zhtw_mcp() {
+	local base="https://github.com/sysprog21/zhtw-mcp/releases/download/latest"
+	local asset=""
+	local tmpdir=""
+
+	case "$(uname -sm)" in
+	"Linux x86_64")
+		asset="zhtw-mcp-x86_64-unknown-linux-gnu.tar.gz"
+		;;
+	"Linux aarch64")
+		asset="zhtw-mcp-aarch64-unknown-linux-gnu.tar.gz"
+		;;
+	"Darwin arm64")
+		asset="zhtw-mcp-aarch64-apple-darwin.tar.gz"
+		;;
+	*)
+		echo "No zhtw-mcp pre-built binary for $(uname -sm)" >&2
+		return 1
+		;;
+	esac
+
+	tmpdir=$(mktemp -d) || return 1
+	if ! curl -fsSL "$base/$asset" -o "$tmpdir/$asset" ||
+		! curl -fsSL "$base/SHA256SUMS" -o "$tmpdir/SHA256SUMS"; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+
+	if command -v sha256sum >/dev/null 2>&1; then
+		if ! (cd "$tmpdir" && awk -v asset="$asset" '$2 == asset { print }' SHA256SUMS | sha256sum -c -); then
+			rm -rf "$tmpdir"
+			return 1
+		fi
+	elif command -v shasum >/dev/null 2>&1; then
+		if ! (cd "$tmpdir" && awk -v asset="$asset" '$2 == asset { print }' SHA256SUMS | shasum -a 256 -c -); then
+			rm -rf "$tmpdir"
+			return 1
+		fi
+	else
+		echo "sha256sum or shasum is required to verify zhtw-mcp" >&2
+		rm -rf "$tmpdir"
+		return 1
+	fi
+
+	if ! tar -xzf "$tmpdir/$asset" -C "$tmpdir" zhtw-mcp; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+
+	mkdir -p "$HOME/.local/bin"
+	install -m 0755 "$tmpdir/zhtw-mcp" "$HOME/.local/bin/zhtw-mcp"
+	rm -rf "$tmpdir"
+
+	"$HOME/.local/bin/zhtw-mcp" --help >/dev/null
+}
+
+setup_claude_code() {
+	local settings="$HOME/.claude/settings.json"
+	local original_model=""
+	if [[ -f "$settings" ]]; then
+		original_model=$(jq -r '.model // empty' "$settings") || return 1
+	fi
+
+	curl -fsSL https://claude.ai/install.sh | bash
+	curl -fsSL https://bun.sh/install | bash
+
+	# Native installers update shell startup files, but this bootstrap keeps
+	# running in the same process. Refresh PATH before invoking them.
+	export PATH="$HOME/.local/bin:$HOME/.bun/bin:$PATH"
+	hash -r
+
+	install_zhtw_mcp
+	claude mcp add --scope user zhtw-mcp -- "$HOME/.local/bin/zhtw-mcp"
+
+	local pensieve_dir="$HOME/.claude/skills/pensieve"
+	if [[ -d "$pensieve_dir" ]]; then
+		git -C "$pensieve_dir" pull --ff-only
+	else
+		git clone -b main https://github.com/kingkongshot/Pensieve.git "$pensieve_dir"
+	fi
+	bash "$pensieve_dir/.src/scripts/init-project-data.sh"
+	claude plugin marketplace add kingkongshot/Pensieve#claude-plugin
+	claude plugin install pensieve@kingkongshot-marketplace --scope user
+	if [[ -n "$original_model" && -f "$settings" ]] &&
+		[[ $(jq -r '.model // empty' "$settings") != "$original_model" ]]; then
+		local restored
+		restored=$(mktemp) || return 1
+		if jq --arg model "$original_model" '.model = $model' "$settings" >"$restored"; then
+			cat "$restored" >"$settings"
+		else
+			rm -f "$restored"
+			return 1
+		fi
+		rm -f "$restored"
+	fi
+}
+
+apply_crontab() {
+	local desired="$XDG_CONFIG_HOME/yadm/crontab"
+	local current merged
+	local begin="# >>> dotfile managed crontab >>>"
+	local end="# <<< dotfile managed crontab <<<"
+
+	[[ -f $desired ]] || return
+	current=$(mktemp) || return 1
+	merged=$(mktemp) || {
+		rm -f "$current"
+		return 1
+	}
+
+	crontab -l 2>/dev/null >"$current" || :
+	awk -v begin="$begin" -v end="$end" '
+		NR == FNR { desired[$0] = 1; next }
+		$0 == begin { managed = 1; next }
+		managed && $0 == end { managed = 0; next }
+		!managed && !desired[$0] { print }
+	' "$desired" "$current" >"$merged"
+	{
+		cat "$merged"
+		printf '%s\n' "$begin"
+		cat "$desired"
+		printf '%s\n' "$end"
+	} | crontab -
+	local status=${PIPESTATUS[1]}
+	rm -f "$current" "$merged"
+	return "$status"
+}
+
+setup_claude_code || exit 1
+install_oh_my_tmux || exit 1
+setup_zsh || exit 1
+apply_crontab

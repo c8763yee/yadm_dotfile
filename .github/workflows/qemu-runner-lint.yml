@@ -1,0 +1,23 @@
+name: QEMU runner lint
+
+on:
+  push:
+    paths:
+      - tests/run-qemu-matrix.sh
+      - .github/workflows/qemu-runner-lint.yml
+  pull_request:
+    paths:
+      - tests/run-qemu-matrix.sh
+      - .github/workflows/qemu-runner-lint.yml
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Bash syntax
+        run: bash -n tests/run-qemu-matrix.sh
+
+      - name: Check matrix enumeration
+        run: tests/run-qemu-matrix.sh --list

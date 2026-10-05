@@ -1,3 +1,8 @@
 */nvim/lazy-lock.json
 */hypr/monitor.conf
-
+/tests/images/
+/tests/vms/
+/tests/seeds/
+/tests/logs/
+/tests/results/
+/tests/ssh/

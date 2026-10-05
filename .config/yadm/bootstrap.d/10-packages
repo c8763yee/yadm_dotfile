@@ -1,0 +1,19 @@
+#!/bin/bash
+. "${XDG_CONFIG_HOME:-$HOME/.config}/yadm/lib/env.sh"
+. "$XDG_CONFIG_HOME/yadm/lib/packages.sh"
+
+install_required_packages() {
+	pkg_update
+	install_packages "$PACKAGES_DIR/base.txt"
+
+	case "$DISTRO" in
+	arch)
+		sudo systemctl enable --now cronie
+		;;
+	fedora)
+		sudo dnf --enablerepo=fedora-debuginfo,updates-debuginfo install kernel-debuginfo
+		;;
+	esac
+}
+
+install_required_packages
