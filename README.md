@@ -47,7 +47,7 @@ For an existing checkout, do not force the update over local files. First inspec
 yadm status --short
 yadm fetch origin
 
-for path in \
+for link in \
   "$HOME/.config/nvim" \
   "$HOME/.config/zsh" \
   "$HOME/.config/niri" \
@@ -59,9 +59,11 @@ for path in \
   "$HOME/.tmux.conf" \
   "$HOME/.tmux.conf.local"
 do
-  [ -L "$path" ] || continue
-  case "$(readlink -f -- "$path")" in
-    "$HOME/Config"/*) rm -- "$path" ;;
+  [ -L "$link" ] || continue
+  target=$(readlink -- "$link") || continue
+
+  case "$target" in
+    "$HOME/Config"/*) rm -- "$link" ;;
   esac
 done
 
