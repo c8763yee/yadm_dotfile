@@ -9,7 +9,13 @@ install_oh_my_tmux() {
 }
 
 setup_zsh() {
-	[[ $SHELL != *zsh* ]] && chsh -s "$(command -v zsh)"
+	local user current_shell zsh_path
+	user=$(id -un) || return 1
+	current_shell=$(getent passwd "$user" | cut -d: -f7) || return 1
+	zsh_path=$(command -v zsh) || return 1
+	[[ "$current_shell" == "$zsh_path" ]] && return 0
+	sudo chsh -s "$zsh_path" "$user" || return 1
+	[[ $(getent passwd "$user" | cut -d: -f7) == "$zsh_path" ]]
 }
 
 install_zhtw_mcp() {
@@ -69,6 +75,12 @@ install_zhtw_mcp() {
 }
 
 setup_claude_code() {
+	local settings="$HOME/.claude/settings.json"
+	local original_model=""
+	if [[ -f "$settings" ]]; then
+		original_model=$(jq -r '.model // empty' "$settings") || return 1
+	fi
+
 	curl -fsSL https://claude.ai/install.sh | bash
 	curl -fsSL https://bun.sh/install | bash
 
@@ -89,6 +101,18 @@ setup_claude_code() {
 	bash "$pensieve_dir/.src/scripts/init-project-data.sh"
 	claude plugin marketplace add kingkongshot/Pensieve#claude-plugin
 	claude plugin install pensieve@kingkongshot-marketplace --scope user
+	if [[ -n "$original_model" && -f "$settings" ]] &&
+		[[ $(jq -r '.model // empty' "$settings") != "$original_model" ]]; then
+		local restored
+		restored=$(mktemp) || return 1
+		if jq --arg model "$original_model" '.model = $model' "$settings" >"$restored"; then
+			cat "$restored" >"$settings"
+		else
+			rm -f "$restored"
+			return 1
+		fi
+		rm -f "$restored"
+	fi
 }
 
 apply_crontab() {
@@ -122,7 +146,7 @@ apply_crontab() {
 	return "$status"
 }
 
-setup_claude_code
-install_oh_my_tmux
-setup_zsh
+setup_claude_code || exit 1
+install_oh_my_tmux || exit 1
+setup_zsh || exit 1
 apply_crontab

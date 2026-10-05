@@ -127,13 +127,13 @@ runner 的儲存位置固定為：
 ./tests/run-qemu-matrix.sh --from QEMU-DEBIAN-BASE
 ```
 
-每個 case 都從 immutable base image 建立 disposable VM disk：Arch / Debian / Fedora 直接複製 qcow2；Ubuntu 因 base 為 `.img`，仍建立 qcow2 overlay。完成 guest 內測試後手動：
+每個 case 都從 immutable base image 建立 disposable VM disk：Arch / Debian / Fedora 直接複製 qcow2；Fedora 的一次性複本若小於 40 GiB，runner 會擴充到 40 GiB，供 KDE 與 kernel debuginfo 安裝；Ubuntu 因 base 為 `.img`，仍建立 qcow2 overlay。完成 guest 內測試後手動：
 
 ```bash
 sudo poweroff
 ```
 
-QEMU process 結束後 runner 會立即刪除該 case 的 `tests/vms/<CASE>.qcow2` 與 cloud-init seed，再直接啟動下一個 case。base image、logs 與 results 會保留。Arch / Debian / Fedora 的 VM disk 是獨立 qcow2 複本；Ubuntu 則是以原始 `.img` 為 backing file 的 qcow2 overlay。
+QEMU process 結束後 runner 會立即刪除該 case 的 `tests/vms/<CASE>.qcow2` 與 cloud-init seed，再直接啟動下一個 case。base image、logs 與 results 會保留。Arch / Debian / Fedora 的 VM disk 是獨立 qcow2 複本，Fedora 複本會視需要擴充到 40 GiB；Ubuntu 則是以原始 `.img` 為 backing file 的 qcow2 overlay。
 
 ## 3. Host 需求
 
@@ -176,7 +176,7 @@ ssh -V
 2. 下載後記錄實際 URL。
 3. 記錄 SHA256。
 4. 建立 immutable base image。
-5. Arch / Debian / Fedora：每個 case 將 qcow2 base 複製成 `tests/vms/<CASE>.qcow2`，QEMU 直接使用該複本。
+5. Arch / Debian / Fedora：每個 case 將 qcow2 base 複製成 `tests/vms/<CASE>.qcow2`；Fedora 複本不足 40 GiB 時先擴充，QEMU 再使用該複本。
 6. Ubuntu：base 為 `.img`，每個 case 建立 qcow2 overlay。
 7. 測試結束刪除 disposable VM disk，不修改 base image。
 
@@ -373,7 +373,7 @@ KDE
 
 ## 9. Debian / Ubuntu / Fedora guest baseline
 
-只安裝：
+只安裝測試所需工具：
 
 ### Debian / Ubuntu
 
@@ -386,9 +386,13 @@ sudo systemctl enable --now ssh
 ### Fedora
 
 ```bash
-sudo dnf install -y git yadm openssh-server sudo
+sudo dnf install -y git openssh-server sudo
+git clone --quiet --depth 1 --branch 3.5.0 https://github.com/yadm-dev/yadm /tmp/yadm-source
+sudo install -m 0755 /tmp/yadm-source/yadm /usr/local/bin/yadm
 sudo systemctl enable --now sshd
 ```
+
+Fedora 44 官方套件庫沒有 `yadm` RPM。runner 的 cloud-init 改為安裝 `git openssh-server sudo`，再從上游 `3.5.0` 標籤安裝 `yadm` 單一腳本；若手動準備 guest，也使用相同步驟。此動作只屬於測試 baseline，不預裝 desktop 套件。
 
 不得預先補 desktop package。
 
@@ -775,6 +779,8 @@ pacman -Q pipewire-jack
 
 有意義的 runtime-generated file 可以變更，但必須排除在 immutable hash set 之外並在測試文件中列明。
 
+Arch + Hyprland 的 HyDE restore 會重新選取目前的 Waybar layout，改寫未追蹤的 `~/.config/waybar/config.jsonc`，並在 `~/.config/waybar/layouts/backup/` 建立時間戳備份。T100 保留完整前後 manifest 供比對；判定 immutable hash 時只排除這兩處 runtime 狀態及 `.zcompdump*`，其餘 Zsh、Waybar 與 yadm 檔案仍須雜湊一致，且 `yadm status --short` 必須為空。
+
 ### T110：Reboot persistence
 
 ```bash
@@ -822,6 +828,13 @@ Arch、Debian family、Fedora 都是正向 gate。
 ```bash
 command -v plasmashell
 systemctl is-enabled sddm
+```
+
+Arch 另需確認選單來源套件及複製結果，避免 `20-desktop` 的選單步驟失敗卻回傳成功：
+
+```bash
+pacman -Q archlinux-xdg-menu
+test -f /etc/xdg/menus/applications.menu
 ```
 
 Plasmoid：

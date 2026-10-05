@@ -68,6 +68,15 @@ plasma:
   ubuntu: kde-plasma-desktop
   fedora: plasma-desktop
 
+fcitx5-im:
+  fedora: fcitx5
+
+noto-fonts-cjk:
+  fedora: google-noto-sans-cjk-fonts
+
+noto-fonts-emoji:
+  fedora: google-noto-color-emoji-fonts
+
 
 lua51:
   arch: lua51

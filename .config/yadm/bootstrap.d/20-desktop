@@ -177,27 +177,29 @@ install_wm_packages() {
 	case "$class" in
 	Hyprland)
 		[[ "$DISTRO" != "arch" ]] && echo "Hyprland 僅支援 Arch Linux，跳過 WM 安裝" && return
-		install_yay
+		install_yay || return 1
 		ensure_pipewire_jack_provider || return 1
-		install_packages "$wm_txt"
-		yay -S --noconfirm --needed $(grep -v '^#' "$PACKAGES_DIR/wm/hyprland-aur.txt")
-		rustup install stable
+		install_packages "$wm_txt" || return 1
+		rustup default stable || return 1
+		yay -S --noconfirm --needed $(grep -v '^#' "$PACKAGES_DIR/wm/hyprland-aur.txt") || return 1
 		sudo cp /etc/xdg/menus/arch-applications.menu /etc/xdg/menus/applications.menu
 		kbuildsycoca6 --noincremental
 		install_hyde || return 1
 		;;
 	Kde)
-		install_packages "$wm_txt"
-		sudo systemctl enable sddm
-		[[ "$DISTRO" == "arch" ]] &&
-			sudo cp /etc/xdg/menus/arch-applications.menu /etc/xdg/menus/applications.menu &&
-			kbuildsycoca6 --noincremental
+		install_packages "$wm_txt" || return 1
+		sudo systemctl enable sddm || return 1
+		if [[ "$DISTRO" == "arch" ]]; then
+			pkg_install archlinux-xdg-menu || return 1
+			sudo cp /etc/xdg/menus/arch-applications.menu /etc/xdg/menus/applications.menu || return 1
+			kbuildsycoca6 --noincremental || return 1
+		fi
 		;;
 	Niri)
 		[[ "$DISTRO" != "arch" ]] && echo "Niri 僅支援 Arch Linux，跳過 WM 安裝" && return
-		install_yay
-		install_packages "$wm_txt"
-		yay -S --noconfirm --needed $(grep -v '^#' "$PACKAGES_DIR/wm/niri-aur.txt")
+		install_yay || return 1
+		install_packages "$wm_txt" || return 1
+		yay -S --noconfirm --needed $(grep -v '^#' "$PACKAGES_DIR/wm/niri-aur.txt") || return 1
 		sudo systemctl enable --now cronie
 		;;
 	esac

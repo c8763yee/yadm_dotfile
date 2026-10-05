@@ -280,6 +280,15 @@ prepare_vm_disk() {
       echo "  $base" >&2
       echo "  -> $vm_disk" >&2
       cp --reflink=never --sparse=always -- "$base" "$vm_disk"
+      if [[ "$os" == "fedora" ]]; then
+        local virtual_size
+        virtual_size=$(qemu-img info "$vm_disk" |
+          awk -F'[()]' '/^virtual size:/ {split($2, bytes, " "); print bytes[1]; exit}')
+        [[ -n "$virtual_size" ]] || return 1
+        if (( virtual_size < 40 * 1024 * 1024 * 1024 )); then
+          qemu-img resize "$vm_disk" 40G
+        fi
+      fi
       ;;
     ubuntu)
       echo "Creating qcow2 overlay for Ubuntu raw/img base:" >&2
@@ -301,7 +310,7 @@ create_cloud_seed() {
   local contract="$4"
   local seed="$SEEDS_DIR/$id.img"
   local work="$SEEDS_DIR/$id.d"
-  local key pub groups service
+  local key pub groups service yadm_package yadm_install
 
   require_cmd cloud-localds
   key=$(ensure_ssh_key)
@@ -311,10 +320,14 @@ create_cloud_seed() {
     fedora)
       groups="wheel"
       service="sshd"
+      yadm_package=""
+      yadm_install='  - [ bash, -lc, "git clone --quiet --depth 1 --branch 3.5.0 https://github.com/yadm-dev/yadm /tmp/yadm-source && install -m 0755 /tmp/yadm-source/yadm /usr/local/bin/yadm" ]'
       ;;
     debian|ubuntu)
       groups="sudo"
       service="ssh"
+      yadm_package="  - yadm"
+      yadm_install=""
       ;;
     *)
       return 1
@@ -339,7 +352,7 @@ disable_root: true
 package_update: true
 packages:
   - git
-  - yadm
+$yadm_package
   - openssh-server
   - sudo
 
@@ -356,6 +369,7 @@ write_files:
 
 runcmd:
   - [ systemctl, enable, --now, $service ]
+$yadm_install
 EOF
 
   cat >"$work/meta-data" <<EOF
