@@ -3,9 +3,15 @@ name: HydeVM integration
 on:
   push:
     branches:
-      - refactor/yadm-ownership
+      - main
     paths:
-      - .github/workflows/hydevm-preflight.yml
+      - ".config/yadm/**"
+      - ".config/zsh/**"
+      - ".zshenv##class.*"
+      - ".config/waybar/**"
+      - "Config/hypr/**"
+      - ".github/workflows/hydevm-preflight.yml"
+  workflow_dispatch:
 
 jobs:
   hydevm-integration:
@@ -88,7 +94,7 @@ jobs:
           ssh_guest "sudo -n true"
           ssh_guest "sudo -n pacman -Sy --needed --noconfirm yadm git"
           ssh_guest "command -v yadm && yadm --version"
-          ssh_guest "yadm clone https://github.com/c8763yee/yadm_dotfile.git -b refactor/yadm-ownership --no-bootstrap"
+          ssh_guest "yadm clone https://github.com/c8763yee/yadm_dotfile.git -b main --no-bootstrap"
           ssh_guest "yadm config local.class Hyprland && yadm alt"
 
           ssh_guest "sh -n ~/.config/yadm/bootstrap"
