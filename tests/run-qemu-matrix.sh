@@ -18,7 +18,7 @@ AUTO_DOWNLOAD="${AUTO_DOWNLOAD:-1}"
 FEDORA_RELEASE="${FEDORA_RELEASE:-44}"
 
 REPO_URL="${REPO_URL:-https://github.com/c8763yee/yadm_dotfile.git}"
-REPO_BRANCH="${REPO_BRANCH:-refactor/yadm-ownership}"
+REPO_BRANCH="${REPO_BRANCH:-main}"
 TEST_USER="${TEST_USER:-tester}"
 
 MATRIX=(
