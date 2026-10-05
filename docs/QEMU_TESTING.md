@@ -234,7 +234,7 @@ MSYS2：
 ```bash
 export TEST_ROOT="${XDG_CACHE_HOME:-$HOME/.cache}/yadm-qemu"
 export REPO_URL="https://github.com/c8763yee/yadm_dotfile.git"
-export REPO_BRANCH="refactor/yadm-ownership"
+export REPO_BRANCH="main"
 export TEST_USER="tester"
 export VM_CPUS=4
 export VM_MEMORY=8G
@@ -1141,9 +1141,9 @@ HydeVM:
 
 ---
 
-## 17. PR / merge gate
+## 17. Main regression gate
 
-`refactor/yadm-ownership` 合併前最低標準：
+會影響 bootstrap、profile ownership 或套件解析的變更進入 `main` 前，最低標準：
 
 - Arch + Base：PASS
 - Arch + Kde：PASS
@@ -1159,7 +1159,7 @@ HydeVM:
 - `yadm status --short`：沒有 bootstrap 導致的 tracked-file mutation
 - HyDE sync/preserve ownership：PASS
 
-MSYS2 full-bootstrap 與 Raspberry Pi OS GUI 不阻塞目前 Linux desktop refactor merge，但測試結果必須保留，不能從矩陣刪除。
+MSYS2 full-bootstrap 與 Raspberry Pi OS GUI 不阻塞目前支援的 Linux desktop 變更，但測試結果必須保留，不能從矩陣刪除。
 
 ---
 
