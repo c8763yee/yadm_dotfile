@@ -27,7 +27,7 @@ mapfile -t hidden_addresses < <(
 commands=()
 if ((${#hidden_addresses[@]} > 0)); then
     for address in "${hidden_addresses[@]}"; do
-        commands+=("dispatch movetoworkspacesilent ${restore_target},address:${address}")
+        commands+=("dispatch hl.dsp.window.move({workspace=\"${restore_target}\", follow=false, window=\"address:${address}\"})")
     done
 else
     mapfile -t visible_addresses < <(
@@ -37,7 +37,7 @@ else
     )
 
     for address in "${visible_addresses[@]}"; do
-        commands+=("dispatch movetoworkspacesilent special:${special_name},address:${address}")
+        commands+=("dispatch hl.dsp.window.move({workspace=\"special:${special_name}\", follow=false, window=\"address:${address}\"})")
     done
 fi
 
