@@ -214,8 +214,16 @@ move_config() {
 		command -v hyde-shell >/dev/null && hyde-shell waybar --update || :
 		inject_waybar_powerdraw
 
-		ln -sf "$BASE_DIR/Config/hypr/userprefs.conf" "$XDG_CONFIG_HOME/hypr/userprefs.conf"
-		ln -sf "$BASE_DIR/Config/hypr/custom" "$XDG_CONFIG_HOME/hypr"
+		# HyDE >= 26.8 uses Lua for the Hyprland compositor configuration.
+		# Remove only the legacy symlink created by older revisions of this repo.
+		local legacy_userprefs="$XDG_CONFIG_HOME/hypr/userprefs.conf"
+		if [[ -L $legacy_userprefs ]] &&
+			[[ $(readlink -- "$legacy_userprefs") == "$BASE_DIR/Config/hypr/userprefs.conf" ]]; then
+			rm -f -- "$legacy_userprefs"
+		fi
+
+		ln -sfn "$BASE_DIR/Config/hypr/hyprland.lua" "$XDG_CONFIG_HOME/hypr/hyprland.lua"
+		ln -sfn "$BASE_DIR/Config/hypr/custom" "$XDG_CONFIG_HOME/hypr/custom"
 	else
 		if [[ $class == "Kde" ]]; then
 			local plasmoid plugin_id
