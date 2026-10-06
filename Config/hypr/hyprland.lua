@@ -15,6 +15,15 @@ end
 local MOD = hyde.config.modifiers.main
 local HOME = assert(os.getenv("HOME"), "HOME is not set")
 
+-- Preserve machine-local Lua settings that HyDE created before yadm took
+-- ownership of hyprland.lua (for example, an auto-detected keyboard layout).
+local state = os.getenv("XDG_STATE_HOME") or (HOME .. "/.local/state")
+local preserved = state .. "/yadm/hypr/hyprland.lua.pre-yadm"
+local preserved_file = io.open(preserved, "r")
+if preserved_file then
+  preserved_file:close()
+  dofile(preserved)
+end
 -- Migrated from userprefs.conf.
 hl.config({
   input = {
