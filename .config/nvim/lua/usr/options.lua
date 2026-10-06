@@ -17,10 +17,9 @@ local options = {
   writebackup = false, -- if a file is being edited by another program (or was written to file while editing with another program), it is not allowed to be edited
   cursorline = true, -- highlight the current line
   number = true, -- set numbered lines
-  relativenumber = true, -- set relative numbered lines
+
   signcolumn = "yes", -- always show the sign column, otherwise it would shift the text each time
   linebreak = true, -- companion to wrap, don't split words
-  guifont = "monospace:h17", -- the font used in graphical neovim applications
   whichwrap = "bs<>[]hl", -- which "horizontal" keys are allowed to travel to prev/next line
 
   -- 我设置的部分
@@ -30,6 +29,16 @@ local options = {
 
 for k, v in pairs(options) do
   vim.opt[k] = v
+end
+
+if vim.fn.has("win32") == 1 then
+  -- Keep these options in sync: Neovim otherwise may run pwsh with cmd.exe flags
+  -- like "/s /c", which can leave terminal jobs stuck before the command starts.
+  vim.opt.shell = vim.fn.executable("pwsh") == 1 and "pwsh" or "powershell"
+  vim.opt.shellcmdflag =
+    "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;"
+  vim.opt.shellquote = ""
+  vim.opt.shellxquote = ""
 end
 
 -- vim.opt.shortmess = "ilmnrx"                        -- flags to shorten vim messages, see :help 'shortmess'
