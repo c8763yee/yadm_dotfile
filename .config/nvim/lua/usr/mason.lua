@@ -31,9 +31,14 @@ require("mason-lspconfig").setup {
 -- 但是这个日志过期了
 -- vim.lsp.set_log_level(vim.log.levels.ERROR)
 
--- ccls 不能支持
--- clangd 在 aarch64 安装有问题
-vim.lsp.enable({ 'ccls', 'clangd', 'nixd' })
+-- These servers are intentionally not managed by mason-lspconfig above.
+-- Enable only commands that actually exist on this host; otherwise Nvim 0.12
+-- reports dead configurations and can never start them.
+for _, server in ipairs({ "ccls", "clangd", "nixd" }) do
+  if vim.fn.executable(server) == 1 then
+    vim.lsp.enable(server)
+  end
+end
 -- 虽然打开这个会让
 -- 打开这个选项会让 telescope ui 不正常
 -- vim.o.winborder = 'rounded'
