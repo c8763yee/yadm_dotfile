@@ -291,9 +291,11 @@ require("lazy").setup({
   "nvim-telescope/telescope-frecency.nvim", -- 查找最近打开的文件
   {
     "dmtrKovalenko/fff",
-    -- 官方下载器在当前 Nix/glibc 环境无法加载预编译库，且 workspace
-    -- 回退构建会超过其两分钟超时；只构建 Neovim package 更可靠。
-    build = "cargo build --release --package fff-nvim",
+    -- Let fff select a compatible prebuilt backend and fall back to a source
+    -- build when necessary. Do not carry Martins3's Nix-specific workaround.
+    build = function()
+      require("fff.download").download_or_build_binary()
+    end,
     lazy = false, -- fff 会自行延迟初始化索引
     opts = {},
     keys = {
