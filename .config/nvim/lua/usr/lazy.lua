@@ -30,64 +30,6 @@ require("lazy").setup({
   { "hrsh7th/cmp-cmdline" },
   { "octaltree/cmp-look" }, -- 利用 nvim/10k.txt 来补全输入
 
-  -- Neovim 内部使用 Rime，独立于 Fcitx5 的外部输入法状态
-  {
-    "rimeinn/rime.nvim",
-    lazy = false,
-    config = function()
-      local traits = require("rime.traits").Traits
-      local fcitx5_rime = vim.fn.expand("~/.local/share/fcitx5/rime")
-      local shared_rime = "/usr/share/rime-data"
-
-      -- The automatic search can prefer stale ibus/fcitx directories on Nix.
-      if vim.fn.isdirectory(fcitx5_rime) == 1 then
-        traits.user_data_dir = fcitx5_rime
-      end
-      if vim.fn.isdirectory(shared_rime) == 1 then
-        traits.shared_data_dir = shared_rime
-      end
-
-      local rime = require("rime.nvim")
-      local nvim_rime = require("rime.nvim.rime")
-
-      -- Keep an incomplete composition alive. The upstream draw() commits it
-      -- whenever the current prefix has no candidates, which breaks entries
-      -- such as `wsm` where the second key is temporarily ambiguous.
-      function nvim_rime.Rime:draw(...)
-        for _, input in ipairs({ ... }) do
-          if not self.session:process_key(input.code, input.mask) then
-            return tostring(input), {}, 0
-          end
-        end
-
-        local context = self.session:get_context()
-        if context == nil then
-          return "", {}, 0
-        end
-        if context.menu.num_candidates == 0 then
-          local preedit = context.composition.preedit or ""
-          if preedit ~= "" then
-            local cursor = context.composition.cursor_pos or #preedit
-            return "", {
-              preedit:sub(1, cursor) .. "|" .. preedit:sub(cursor + 1),
-            }, 0
-          end
-          return self.session:get_commit_text(), {}, 0
-        end
-
-        local lines, col = self.ui:draw(context)
-        return "", lines, col
-      end
-
-      vim.keymap.set("i", "<C-m>", rime.toggle, { desc = "toggle Rime" })
-      vim.keymap.set("i", "<C-\\>", rime.callback("<C-\\>"), { desc = "pass key to Rime" })
-
-      vim.api.nvim_create_user_command("RimeToggle", rime.toggle, { force = true })
-      vim.api.nvim_create_user_command("RimeEnable", rime.enable, { force = true })
-      vim.api.nvim_create_user_command("RimeDisable", rime.disable, { force = true })
-    end,
-  },
-
   -- AI 行内补全 (本地 vLLM / OpenAI-compatible)
   -- 服务不在线时仅请求超时，不会报 Lua 错误
   {
@@ -291,11 +233,11 @@ require("lazy").setup({
   "nvim-telescope/telescope-frecency.nvim", -- 查找最近打开的文件
   {
     "dmtrKovalenko/fff",
-    -- Let fff select a compatible prebuilt backend and fall back to a source
-    -- build when necessary. Do not carry Martins3's Nix-specific workaround.
-    build = function()
-      require("fff.download").download_or_build_binary()
-    end,
+    -- Build the Neovim cdylib directly. fff's helper requires rustup for its
+    -- source fallback, while Arch/CachyOS may provide cargo/rustc without rustup.
+    -- The fff-nvim crate writes target/release/libfff_nvim.so, exactly where the
+    -- Lua loader searches for it.
+    build = "cargo build --release -p fff-nvim",
     lazy = false, -- fff 会自行延迟初始化索引
     opts = {},
     keys = {
