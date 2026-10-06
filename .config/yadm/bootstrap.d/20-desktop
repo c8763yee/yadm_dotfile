@@ -214,8 +214,33 @@ move_config() {
 		command -v hyde-shell >/dev/null && hyde-shell waybar --update || :
 		inject_waybar_powerdraw
 
-		ln -sf "$BASE_DIR/Config/hypr/userprefs.conf" "$XDG_CONFIG_HOME/hypr/userprefs.conf"
-		ln -sf "$BASE_DIR/Config/hypr/custom" "$XDG_CONFIG_HOME/hypr"
+		# HyDE >= 26.8 uses Lua for the Hyprland compositor configuration.
+		# Remove only the legacy symlink created by older revisions of this repo.
+		local legacy_userprefs="$XDG_CONFIG_HOME/hypr/userprefs.conf"
+		if [[ -L $legacy_userprefs ]] &&
+			[[ $(readlink -- "$legacy_userprefs") == "$BASE_DIR/Config/hypr/userprefs.conf" ]]; then
+			rm -f -- "$legacy_userprefs"
+		fi
+
+		local hypr_source="$BASE_DIR/Config/hypr/hyprland.lua"
+		local hypr_target="$XDG_CONFIG_HOME/hypr/hyprland.lua"
+		local hypr_backup="${XDG_STATE_HOME:-$HOME/.local/state}/yadm/hypr/hyprland.lua.pre-yadm"
+
+		# HyDE may already have written machine-local Lua settings here. Preserve
+		# the first pre-yadm copy and load it from the yadm-owned config.
+		if [[ -f $hypr_target && ! -L $hypr_target && ! -e $hypr_backup ]]; then
+			mkdir -p "$(dirname "$hypr_backup")"
+			cp -a -- "$hypr_target" "$hypr_backup"
+		fi
+
+		# Do not silently replace a symlink owned by something else.
+		if [[ -L $hypr_target ]] && [[ $(readlink -- "$hypr_target") != "$hypr_source" ]]; then
+			echo "Refusing to replace foreign Hyprland config symlink: $hypr_target" >&2
+			return 1
+		fi
+
+		ln -sfn "$hypr_source" "$hypr_target"
+		ln -sfn "$BASE_DIR/Config/hypr/custom" "$XDG_CONFIG_HOME/hypr/custom"
 	else
 		if [[ $class == "Kde" ]]; then
 			local plasmoid plugin_id
