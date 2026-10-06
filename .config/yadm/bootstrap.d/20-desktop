@@ -222,7 +222,24 @@ move_config() {
 			rm -f -- "$legacy_userprefs"
 		fi
 
-		ln -sfn "$BASE_DIR/Config/hypr/hyprland.lua" "$XDG_CONFIG_HOME/hypr/hyprland.lua"
+		local hypr_source="$BASE_DIR/Config/hypr/hyprland.lua"
+		local hypr_target="$XDG_CONFIG_HOME/hypr/hyprland.lua"
+		local hypr_backup="${XDG_STATE_HOME:-$HOME/.local/state}/yadm/hypr/hyprland.lua.pre-yadm"
+
+		# HyDE may already have written machine-local Lua settings here. Preserve
+		# the first pre-yadm copy and load it from the yadm-owned config.
+		if [[ -f $hypr_target && ! -L $hypr_target && ! -e $hypr_backup ]]; then
+			mkdir -p "$(dirname "$hypr_backup")"
+			cp -a -- "$hypr_target" "$hypr_backup"
+		fi
+
+		# Do not silently replace a symlink owned by something else.
+		if [[ -L $hypr_target ]] && [[ $(readlink -- "$hypr_target") != "$hypr_source" ]]; then
+			echo "Refusing to replace foreign Hyprland config symlink: $hypr_target" >&2
+			return 1
+		fi
+
+		ln -sfn "$hypr_source" "$hypr_target"
 		ln -sfn "$BASE_DIR/Config/hypr/custom" "$XDG_CONFIG_HOME/hypr/custom"
 	else
 		if [[ $class == "Kde" ]]; then
