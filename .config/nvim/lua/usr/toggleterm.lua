@@ -1,10 +1,9 @@
-local isWindows = vim.fn.has('win32') == 1
+local isWindows = vim.fn.has("win32") == 1
 
 if isWindows then
   local powershell_options = {
-    shell = vim.fn.executable "pwsh" == 1 and "pwsh" or "powershell",
-    shellcmdflag =
-    "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;",
+    shell = vim.fn.executable("pwsh") == 1 and "pwsh" or "powershell",
+    shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;",
     shellredir = "-RedirectStandardOutput %s -NoNewWindow -Wait",
     shellpipe = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode",
     shellquote = "",
@@ -17,51 +16,51 @@ if isWindows then
 end
 
 local Terminal = require("toggleterm.terminal").Terminal
+local python = require("usr.python")
 
--- TODO 这些重复的内容显然可以注册成函数
-function _lazygit_toggle()
-  local lazygit = Terminal:new({
-    cmd = "tig status",
+local function toggle_float_terminal(cmd)
+  Terminal:new({
+    cmd = cmd,
     hidden = true,
     direction = "float",
-  })
-  lazygit:toggle()
+  }):toggle()
 end
 
-function _ls_toggle()
-  local ls = Terminal:new({ cmd = "tig " .. vim.api.nvim_buf_get_name(0), hidden = true, direction = "float" })
-  ls:toggle()
+local function lazygit_toggle()
+  toggle_float_terminal("tig status")
 end
 
-function _ipython_toggle()
-  local ipython = Terminal:new({ cmd = "ipython", hidden = true, direction = "float" })
-  ipython:toggle()
+local function ls_toggle()
+  toggle_float_terminal("tig " .. vim.api.nvim_buf_get_name(0))
+end
+
+local function ipython_toggle()
+  toggle_float_terminal(python.ipython_command())
+end
+
+local function pytest_file_toggle()
+  toggle_float_terminal(python.pytest_command())
+end
+
+local function pytest_nearest_toggle()
+  toggle_float_terminal(python.pytest_command(python.current_test_target()))
+end
+
+local function pytest_project_toggle()
+  local root = python.project_root(0)
+  toggle_float_terminal("cd " .. vim.fn.shellescape(root) .. " && " .. python.pytest_cmd(root))
 end
 
 require("toggleterm").setup({
   direction = "float",
   open_mapping = [[<c-t>]],
   persist_mode = false, -- 总是进入到 insert mode 中
+  auto_scroll = false, -- 如果屏幕中出现新的内容，不要将屏幕滑动最下
 })
 
-vim.api.nvim_set_keymap("n", "<space>gs", "<cmd>lua _lazygit_toggle()<CR>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "<space>gl", "<cmd>lua _ls_toggle()<CR>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "<space>x", "<cmd>lua _ipython_toggle()<CR>", { noremap = true, silent = true })
-
-function _G.set_terminal_keymaps()
-  local opts = { buffer = 0 }
-  vim.keymap.set('t', '<esc>', [[<C-\><C-n>]], opts)
-
-  vim.keymap.set("t", "<c-s>", "<cmd>TermSelect<CR>", opts)
-end
-
--- if you only want these mappings for toggle term use term://*toggleterm#* instead
-vim.cmd('autocmd! TermOpen term://* lua set_terminal_keymaps()')
-
-function get_terminal()
-  local m = vim.api.nvim_buf_get_name(0)
-  print(string.match(m, '%d$'))
-end
-
-vim.api.nvim_set_keymap("n", "<c-s>", "<cmd>TermSelect<CR>",
-  { noremap = true, silent = true })
+vim.keymap.set("n", "<space>gs", lazygit_toggle, { silent = true })
+vim.keymap.set("n", "<space>gl", ls_toggle, { silent = true })
+vim.keymap.set("n", "<space>x", ipython_toggle, { silent = true })
+vim.keymap.set("n", "<space>lt", pytest_file_toggle, { silent = true, desc = "pytest current file" })
+vim.keymap.set("n", "<space>lT", pytest_nearest_toggle, { silent = true, desc = "pytest nearest test" })
+vim.keymap.set("n", "<space>lp", pytest_project_toggle, { silent = true, desc = "pytest project" })

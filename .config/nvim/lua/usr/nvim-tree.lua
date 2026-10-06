@@ -19,18 +19,19 @@ local function on_attach(bufnr)
   vim.keymap.set("n", "a", api.fs.create, opts("Create"))
   vim.keymap.set("n", "d", api.fs.remove, opts("Delete"))
   vim.keymap.set("n", "r", api.fs.rename, opts("Rename"))
-  vim.keymap.set("n", "I", api.tree.toggle_gitignore_filter, opts("Toggle Git Ignore"))
+  vim.keymap.set("n", "I", api.filter.git.ignored.toggle, opts("Toggle Git Ignore"))
   vim.keymap.set("n", "R", api.tree.collapse_all, opts("Collapse"))
   vim.keymap.set("n", "?", api.tree.toggle_help, opts("Help"))
 end
 
 require("nvim-tree").setup({
   view = {
-    side = "left",
-    number = true,
-    relativenumber = true
+    side = "right",
   },
   on_attach = on_attach,
+  filesystem_watchers = {
+    enable = false,
+  },
   actions = {
     open_file = {
       quit_on_open = false,

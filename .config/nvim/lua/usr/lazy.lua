@@ -15,6 +15,7 @@ require("lazy").setup({
   -- 基础
   "nvim-lua/plenary.nvim", -- 很多 lua 插件依赖的库
   "kyazdani42/nvim-web-devicons", -- 显示图标
+  "echasnovski/mini.icons", -- which-key healthcheck prefers it when available
   "folke/which-key.nvim", -- 用于配置和提示快捷键
   "kkharji/sqlite.lua", -- 数据库
   "MunifTanjim/nui.nvim", -- 图形库
@@ -29,6 +30,149 @@ require("lazy").setup({
   { "hrsh7th/cmp-cmdline" },
   { "octaltree/cmp-look" }, -- 利用 nvim/10k.txt 来补全输入
 
+  -- Neovim 内部使用 Rime，独立于 Fcitx5 的外部输入法状态
+  {
+    "rimeinn/rime.nvim",
+    lazy = false,
+    config = function()
+      local traits = require("rime.traits").Traits
+      local fcitx5_rime = vim.fn.expand("~/.local/share/fcitx5/rime")
+      local shared_rime = "/usr/share/rime-data"
+
+      -- The automatic search can prefer stale ibus/fcitx directories on Nix.
+      if vim.fn.isdirectory(fcitx5_rime) == 1 then
+        traits.user_data_dir = fcitx5_rime
+      end
+      if vim.fn.isdirectory(shared_rime) == 1 then
+        traits.shared_data_dir = shared_rime
+      end
+
+      local rime = require("rime.nvim")
+      local nvim_rime = require("rime.nvim.rime")
+
+      -- Keep an incomplete composition alive. The upstream draw() commits it
+      -- whenever the current prefix has no candidates, which breaks entries
+      -- such as `wsm` where the second key is temporarily ambiguous.
+      function nvim_rime.Rime:draw(...)
+        for _, input in ipairs({ ... }) do
+          if not self.session:process_key(input.code, input.mask) then
+            return tostring(input), {}, 0
+          end
+        end
+
+        local context = self.session:get_context()
+        if context == nil then
+          return "", {}, 0
+        end
+        if context.menu.num_candidates == 0 then
+          local preedit = context.composition.preedit or ""
+          if preedit ~= "" then
+            local cursor = context.composition.cursor_pos or #preedit
+            return "", {
+              preedit:sub(1, cursor) .. "|" .. preedit:sub(cursor + 1),
+            }, 0
+          end
+          return self.session:get_commit_text(), {}, 0
+        end
+
+        local lines, col = self.ui:draw(context)
+        return "", lines, col
+      end
+
+      vim.keymap.set("i", "<C-m>", rime.toggle, { desc = "toggle Rime" })
+      vim.keymap.set("i", "<C-\\>", rime.callback("<C-\\>"), { desc = "pass key to Rime" })
+
+      vim.api.nvim_create_user_command("RimeToggle", rime.toggle, { force = true })
+      vim.api.nvim_create_user_command("RimeEnable", rime.enable, { force = true })
+      vim.api.nvim_create_user_command("RimeDisable", rime.disable, { force = true })
+    end,
+  },
+
+  -- AI 行内补全 (本地 vLLM / OpenAI-compatible)
+  -- 服务不在线时仅请求超时，不会报 Lua 错误
+  {
+    "milanglacier/minuet-ai.nvim",
+    event = "InsertEnter",
+    enabled = false,
+    config = function()
+      require("minuet").setup({
+        -- 使用 OpenAI-compatible chat completions 端点对接 vLLM
+        provider = "openai_compatible",
+        -- 本地模型响应较慢，适当放宽超时和节流
+        request_timeout = 5,
+        throttle = 1000,
+        debounce = 400,
+        -- 初始上下文窗口，可根据本地 GPU 性能调大
+        context_window = 1024,
+        n_completions = 1, -- 本地模型建议只请求 1 个结果，节省资源
+        provider_options = {
+          openai_compatible = {
+            end_point = "http://127.0.0.1:8000/v1/chat/completions",
+            model = "qwen3-0.6b",
+            -- 本地部署无需认证，但必须返回非空字符串；
+            -- 用函数返回可避免被当作环境变量名去查而导致 nil 报错
+            api_key = function()
+              return "EMPTY"
+            end,
+            name = "LocalLLM",
+            stream = true,
+            optional = {
+              max_tokens = 1280,
+              temperature = 0.2,
+              top_p = 0.9,
+            },
+          },
+        },
+        virtualtext = {
+          -- 自动触发的文件类型，"*" 表示全部
+          auto_trigger_ft = { "*" },
+          keymap = {
+            accept = "<A-f>", -- Alt+f 接受整个建议
+            accept_line = "<A-l>", -- Alt+l 接受整行
+            accept_n_lines = nil, -- 不绑定
+            next = "<A-n>", -- Alt+n 下一条建议
+            prev = "<A-p>", -- Alt+p 上一条建议
+            dismiss = "<A-e>", -- Alt+e 关闭建议
+          },
+        },
+        notify = "warn",
+      })
+    end,
+  },
+
+  -- AI 行内补全 (GitHub Copilot) -- 保留备用，已禁用
+  {
+    "zbirenbaum/copilot.lua",
+    enabled = false,
+    cmd = "Copilot",
+    event = "InsertEnter",
+    config = function()
+      -- The disabled plugin is absent from runtimepath, so lua_ls otherwise
+      -- mistakes Avante's internal copilot module for zbirenbaum/copilot.lua.
+      ---@type { setup: fun(opts: table) }
+      local copilot = require("copilot")
+      copilot.setup({
+        panel = { enabled = false },
+        suggestion = {
+          enabled = true,
+          auto_trigger = true,
+          debounce = 75,
+          keymap = {
+            accept = "<A-f>",
+            accept_word = "<A-w>",
+            accept_line = "<A-l>",
+            next = "<A-n>",
+            prev = "<A-p>",
+            dismiss = "<A-e>",
+          },
+        },
+        filetypes = { ["c"] = true },
+        copilot_node_command = "node",
+        server_opts_overrides = {},
+      })
+    end,
+  },
+
   -- 代码段
   {
     "L3MON4D3/LuaSnip",
@@ -38,7 +182,16 @@ require("lazy").setup({
   { "neovim/nvim-lspconfig" }, -- enable LSP
   { "williamboman/mason.nvim" }, -- simple to use language server installer
   { "williamboman/mason-lspconfig.nvim" },
-  { "j-hui/fidget.nvim", tag = "legacy" }, -- 右下角展示索引状态
+  {
+    "j-hui/fidget.nvim",
+    version = "1.6.1",
+    lazy = false,
+    opts = {
+      notification = {
+        override_vim_notify = false,
+      },
+    },
+  }, -- 右下角展示索引状态
   {
     "nvimdev/lspsaga.nvim",
     config = function()
@@ -62,24 +215,13 @@ require("lazy").setup({
       })
     end,
   }, -- lsp 增强，例如提供 winbar 的功能
-{
-  "linux-cultist/venv-selector.nvim",
-  dependencies = {
-    { "nvim-telescope/telescope.nvim", version = "*", dependencies = { "nvim-lua/plenary.nvim" } }, -- optional: you can also use fzf-lua, snacks, mini-pick instead.
-  },
-  ft = "python", -- Load when opening Python files
-  opts = {
-    options = {}, -- plugin-wide options
-    search = {}   -- custom search definitions
-  },
-},
   -- 配置文件在 https://github.com/nvimdev/lspsaga.nvim/blob/main/lua/lspsaga/init.lua
   {
     "stevearc/conform.nvim",
     opts = {
       formatters_by_ft = {
         lua = { "stylua" },
-        python = { "black" },
+        python = { "ruff_organize_imports", "ruff_fix", "ruff_format" },
         markdown = { "deno_fmt" },
       },
       formatters = {
@@ -95,7 +237,7 @@ require("lazy").setup({
   --treesitter
   {
     "nvim-treesitter/nvim-treesitter",
-    branch = "main",
+    commit = "f8bbc3177d929dc86e272c41cc15219f0a7aa1ac", -- newer main drops Nvim 0.11 support
     lazy = false,
     build = ":TSUpdate",
   },
@@ -103,8 +245,20 @@ require("lazy").setup({
   { "nvim-treesitter/nvim-treesitter-textobjects", branch = "main" },
   -- ui
   "kyazdani42/nvim-tree.lua", -- 文件树
-  "akinsho/bufferline.nvim", -- buffer
-  "nvim-lualine/lualine.nvim", -- 状态栏
+  {
+    "akinsho/bufferline.nvim",
+    event = "VeryLazy",
+    config = function()
+      require("usr.bufferline")
+    end,
+  }, -- buffer
+  {
+    "nvim-lualine/lualine.nvim",
+    event = "VeryLazy",
+    config = function()
+      require("usr.lualine")
+    end,
+  }, -- 状态栏
   {
     "axkirillov/hbac.nvim",
     event = "SessionLoadPost",
@@ -125,7 +279,6 @@ require("lazy").setup({
   "rhysd/git-messenger.vim", -- 利用 git blame 显示当前行的 commit message
   "tpope/vim-fugitive", -- 实现一些基本操作的快捷执行
   "lewis6991/gitsigns.nvim", -- 显示改动的信息
-  {'akinsho/git-conflict.nvim', version = "*", config = true}, -- 解决 git 冲突
   -- 基于 telescope 的搜索
   "nvim-telescope/telescope.nvim",
   {
@@ -136,22 +289,67 @@ require("lazy").setup({
     end,
   },
   "nvim-telescope/telescope-frecency.nvim", -- 查找最近打开的文件
+  {
+    "dmtrKovalenko/fff",
+    -- 官方下载器在当前 Nix/glibc 环境无法加载预编译库，且 workspace
+    -- 回退构建会超过其两分钟超时；只构建 Neovim package 更可靠。
+    build = "cargo build --release --package fff-nvim",
+    lazy = false, -- fff 会自行延迟初始化索引
+    opts = {},
+    keys = {
+      {
+        "<leader>d",
+        function()
+          require("fff").find_files()
+        end,
+        desc = "search files with fff",
+      },
+      {
+        "<leader>D",
+        function()
+          require("fff").live_grep()
+        end,
+        desc = "live grep with fff",
+      },
+    },
+  },
   -- 命令执行
-  "akinsho/toggleterm.nvim",                -- nvim 中打开终端
+  {
+    "akinsho/toggleterm.nvim",
+    cmd = { "ToggleTerm", "TermSelect" },
+    keys = {
+      "<c-t>",
+      "<space>gs",
+      "<space>gl",
+      "<space>x",
+      { "<space>lt", desc = "pytest current file" },
+      { "<space>lT", desc = "pytest nearest test" },
+      { "<space>lp", desc = "pytest project" },
+      "<space>e",
+      "<c-s>",
+    },
+    config = function()
+      require("usr.toggleterm")
+    end,
+  }, -- nvim 中打开终端
   "CRAG666/code_runner.nvim", -- 一键运行代码
   "samjwill/nvim-unception", -- 在 nvim 的 termianl 打开 nvim 自动 offload
   -- markdown
   {
     "iamcco/markdown-preview.nvim",
     cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
-    build = "cd app && yarn install",
+    build = function()
+      vim.fn["mkdp#util#install"]()
+    end,
+    -- 这个写法看上去仅仅在 Unix 上可以工作
+    -- build = "cd app && yarn install",
     init = function()
       vim.g.mkdp_filetypes = { "markdown" }
     end,
     ft = { "markdown" },
   },
   -- 如果发现插件有问题， 可以进入到 ~/.local/share/nvim/lazy/markdown-preview.nvim/app && npm install
-  "mzlogin/vim-markdown-toc", -- 自动目录生成
+  "mzlogin/vim-markdown-toc", -- 自动生成 markdown 文章的目录
   "dhruvasagar/vim-table-mode", -- 快速编辑 markdown 的表格
   -- 高效编辑
   "tpope/vim-commentary", -- 快速注释代码
@@ -160,26 +358,59 @@ require("lazy").setup({
   "mbbill/undotree", -- 显示编辑的历史记录
   "windwp/nvim-spectre", -- 媲美 vscode 的多文件替换
   -- 高亮
-  "norcalli/nvim-colorizer.lua", -- 显示 #ABCBCB
-  -- 时间管理
-  "nvim-orgmode/orgmode", -- orgmode 日程管理
+  {
+    "nvim-mini/mini.hipatterns",
+    ft = { "css", "javascript", "lua", "html" },
+    config = function()
+      local hipatterns = require("mini.hipatterns")
+      local color_filetypes = { css = true, javascript = true, lua = true, html = true }
 
+      hipatterns.setup({
+        highlighters = {
+          hex_color = hipatterns.gen_highlighter.hex_color({
+            filter = function(bufnr)
+              return color_filetypes[vim.bo[bufnr].filetype] == true
+            end,
+          }),
+        },
+      })
+      hipatterns.enable()
+    end,
+  }, -- 显示 #ABCBCB
   -- lsp 增强
   "jackguo380/vim-lsp-cxx-highlight", -- ccls 高亮
   "mattn/efm-langserver", -- 支持 bash
   "jakemason/ouroboros", -- quickly switch between header and source file in C/C++ project
   {
     "mrcjkb/rustaceanvim",
-    version = "^4", -- Recommended
+    version = "^9", -- Recommended
     lazy = false, -- This plugin is already lazy
   },
   -- 其他
-  "ggandor/leap.nvim", -- 快速移动
-  "ggandor/flit.nvim", -- 利用 leap.nvim 强化 f/F t/T
+  {
+    url = "https://codeberg.org/andyg/leap.nvim", -- 快速移动
+  },
 
-  { "crusj/bookmarks.nvim", branch = "main" }, -- 书签, 存储在 ~/.local/share/nvim/bookmarks 中
+  {
+    "crusj/bookmarks.nvim",
+    branch = "main",
+    event = "VeryLazy",
+    config = function()
+      require("bookmarks").setup({
+        mappings_enabled = true,
+        keymap = {
+          toggle = "mc",
+          delete = "dd",
+        },
+        virt_pattern = { "*.lua", "*.md", "*.c", "*.h", "*.sh", "*.py" },
+      })
+      require("telescope").load_extension("bookmarks")
+    end,
+  }, -- 书签, 存储在 ~/.local/share/nvim/bookmarks 中
   "tyru/open-browser.vim", -- 使用 gx 打开链接
   {
+    -- TODO 似乎这个容易导致安装问题，应该让只有 linux 图形界面的时候再去安装
+    -- 用起来还是有点问题的，会做一些奇怪的自动切换
     "keaising/im-select.nvim",
     config = function()
       require("im_select").setup()
@@ -189,16 +420,28 @@ require("lazy").setup({
   {
     "olimorris/persisted.nvim",
   }, -- 自动保存关闭时候的会话
-  "nvimtools/hydra.nvim", -- 消除重复快捷键，可以用于调整 window 大小等
-  { "andrewferrier/debugprint.nvim", version = "*" }, -- 快速插入 print 来调试
+  {
+    "andrewferrier/debugprint.nvim",
+    version = "*",
+    event = "VeryLazy",
+    opts = {},
+  }, -- 快速插入 print 来调试，默认快捷键 g?p
   { "xiyaowong/telescope-emoji.nvim" },
   {
+    -- dir = "/home/martins3/data/rsync.nvim/",
     "Martins3/rsync.nvim",
     lazy = true,
-    cmd = { "TransferInit", "TransferToggle" },
+    cmd = { "TransferInit", "TransferToggle", "TransferShow" },
     opts = {},
   },
-
+  {
+    -- dir = "/home/martins3/data/vim-translator",
+    "Martins3/translator.nvim",
+    config = function()
+      require("translator").setup()
+    end,
+    cmd = { "Translate" },
+  },
   {
     "stevearc/aerial.nvim",
     config = function()
@@ -212,6 +455,11 @@ require("lazy").setup({
         },
         attach_mode = "global",
         disable_max_lines = 20000,
+        filter_kind = {
+          typst = {
+            "Namespace", -- codex 给 typst 修复，不然，这个不会显示结果
+          },
+        },
       })
     end,
   },
@@ -221,27 +469,53 @@ require("lazy").setup({
     config = true,
   }, -- 在 visual mode 展示空白字符
   {
+    "folke/snacks.nvim",
+    priority = 1000,
+    lazy = false,
+    opts = {
+      -- your configuration comes here
+      -- or leave it empty to use the default settings
+      -- refer to the configuration section below
+      bigfile = { enabled = true },
+      -- dashboard = { enabled = true },
+      -- explorer = { enabled = true },
+      -- indent = { enabled = true },
+      input = { enabled = true },
+      -- picker = { enabled = true },
+      -- notifier = { enabled = true },
+      -- quickfile = { enabled = true },
+      -- scope = { enabled = true },
+      -- scroll = { enabled = true },
+      -- statuscolumn = { enabled = true },
+      -- words = { enabled = true },
+    },
+  },
+  {
     "yetone/avante.nvim",
-    enabled = false,
+    enabled = true,
+    build = vim.fn.has("win32") ~= 0 and "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false"
+      or "make",
     event = "VeryLazy",
     lazy = false,
     version = false, -- set this if you want to always pull the latest change
     opts = {
       provider = "deepseek",
-      vendors = {
+      providers = {
         deepseek = {
           __inherited_from = "openai",
-          api_key_name = "DEEPSEEK_API_KEY",
           endpoint = "https://api.deepseek.com",
-          model = "deepseek-coder",
+          model = "deepseek-v4-flash",
+          api_key_name = "cmd:cat " .. vim.fn.expand("~/.config/avante/deepseek-api-key"),
+          timeout = 30000,
+          context_window = 1000000,
+          use_response_api = false,
+          support_previous_response_id = false,
+          extra_request_body = {
+            max_tokens = 32768,
+            thinking = { type = "enabled" },
+          },
         },
       },
-    },
-    -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
-    build = "make",
-    -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
-    dependencies = {
-      -- "stevearc/dressing.nvim",  -- 这个让 nvim-tree 的编辑有点不习惯
     },
   },
   -- cppman
@@ -251,7 +525,7 @@ require("lazy").setup({
       local cppman = require("cppman")
       cppman.setup()
 
-      -- Make a keymap to open the word under cursor in CPPman
+      -- Make a keymap to open the word under cursor in cppman
       vim.keymap.set("n", "<leader>cm", function()
         cppman.open_cppman_for(vim.fn.expand("<cword>"))
       end)
@@ -266,30 +540,48 @@ require("lazy").setup({
   {
     "mikavilpas/yazi.nvim",
     event = "VeryLazy",
-    dependencies = { "folke/snacks.nvim", lazy = true },
     keys = {},
-    enabled = false, -- 升级到 0.11 的时候才可以使用
+    enabled = true,
   },
-  -- claude-code
+  {
+    "chomosuke/typst-preview.nvim",
+    lazy = false, -- or ft = 'typst'
+    version = "1.*",
+    opts = {
+      -- host = "172.17.127.73", -- 这个总是需要修改，就有点烦
+      port = 8001,
+    }, -- lazy.nvim will implicitly calls `setup {}`
+  },
+  -- Local plugins retained from c8763yee/yadm_dotfile.
+  {
+    "linux-cultist/venv-selector.nvim",
+    dependencies = {
+      { "nvim-telescope/telescope.nvim", version = "*", dependencies = { "nvim-lua/plenary.nvim" } },
+    },
+    ft = "python",
+    opts = {
+      options = {},
+      search = {},
+    },
+  },
   {
     "greggh/claude-code.nvim",
-    dependencies = {
-      "nvim-lua/plenary.nvim", -- Required for git operations
-    },
+    dependencies = { "nvim-lua/plenary.nvim" },
     config = function()
       require("claude-code").setup()
-    end
+    end,
   },
-{
-   "m4xshen/hardtime.nvim",
-   lazy = false,
-   dependencies = { "MunifTanjim/nui.nvim" },
-   opts = {},
-},
-  "pteroctopus/faster.nvim", -- 打开大文件的时候自动 disable 一些功能，例如高亮等
   {
-	"LunarVim/breadcrumbs.nvim",
-    	dependencies = {
-        	{"SmiteshP/nvim-navic"},
-    	},}
+    "m4xshen/hardtime.nvim",
+    lazy = false,
+    dependencies = { "MunifTanjim/nui.nvim" },
+    opts = {},
+  },
+  {
+    "LunarVim/breadcrumbs.nvim",
+    dependencies = {
+      { "SmiteshP/nvim-navic" },
+    },
+  },
+
 }, {})
