@@ -32,7 +32,7 @@ hl.unbind(MOD .. " + SHIFT + F")
 
 hl.bind(
   MOD .. " + SHIFT + F",
-  hl.dsp.window.fullscreen_state({ internal = 1, client = 1 }),
+  hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }),
   { description = "[Window Management] maximize window" }
 )
 
