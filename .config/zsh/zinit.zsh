@@ -121,7 +121,7 @@ zinit snippet OMZL::directories.zsh
 zinit wait"1" lucid reset for \
     OMZP::git OMZP::vim-interaction OMZP::pipenv OMZP::pip OMZP::aliases \
     OMZP::docker OMZP::docker-compose OMZP::poetry OMZP::git-commit \
-    OMZP::git-auto-fetch OMZP::ssh OMZP::sudo OMZP::github OMZP::git-hubflow \
+    OMZP::git-auto-fetch OMZP::ssh OMZP::sudo OMZP::git-hubflow \
     OMZP::git-lfs OMZP::alias-finder OMZP::uv OMZP::colored-man-pages OMZP::gh \
     OMZP::history OMZP::postgres OMZP::ssh-agent OMZP::supervisor OMZP::tmux \
     OMZP::themes OMZP::vscode OMZP::wakeonlan
