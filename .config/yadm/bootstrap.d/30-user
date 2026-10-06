@@ -18,23 +18,24 @@ setup_zsh() {
 	[[ $(getent passwd "$user" | cut -d: -f7) == "$zsh_path" ]]
 }
 
-install_zhtw_mcp() {
-	local base="https://github.com/sysprog21/zhtw-mcp/releases/download/latest"
+install_sysprog21_mcp() {
+	local name=$1
+	local base="https://github.com/sysprog21/$name/releases/download/latest"
 	local asset=""
 	local tmpdir=""
 
 	case "$(uname -sm)" in
 	"Linux x86_64")
-		asset="zhtw-mcp-x86_64-unknown-linux-gnu.tar.gz"
+		asset="$name-x86_64-unknown-linux-gnu.tar.gz"
 		;;
 	"Linux aarch64")
-		asset="zhtw-mcp-aarch64-unknown-linux-gnu.tar.gz"
+		asset="$name-aarch64-unknown-linux-gnu.tar.gz"
 		;;
 	"Darwin arm64")
-		asset="zhtw-mcp-aarch64-apple-darwin.tar.gz"
+		asset="$name-aarch64-apple-darwin.tar.gz"
 		;;
 	*)
-		echo "No zhtw-mcp pre-built binary for $(uname -sm)" >&2
+		echo "No $name pre-built binary for $(uname -sm)" >&2
 		return 1
 		;;
 	esac
@@ -57,21 +58,21 @@ install_zhtw_mcp() {
 			return 1
 		fi
 	else
-		echo "sha256sum or shasum is required to verify zhtw-mcp" >&2
+		echo "sha256sum or shasum is required to verify $name" >&2
 		rm -rf "$tmpdir"
 		return 1
 	fi
 
-	if ! tar -xzf "$tmpdir/$asset" -C "$tmpdir" zhtw-mcp; then
+	if ! tar -xzf "$tmpdir/$asset" -C "$tmpdir" "$name"; then
 		rm -rf "$tmpdir"
 		return 1
 	fi
 
 	mkdir -p "$HOME/.local/bin"
-	install -m 0755 "$tmpdir/zhtw-mcp" "$HOME/.local/bin/zhtw-mcp"
+	install -m 0755 "$tmpdir/$name" "$HOME/.local/bin/$name"
 	rm -rf "$tmpdir"
 
-	"$HOME/.local/bin/zhtw-mcp" --help >/dev/null
+	"$HOME/.local/bin/$name" --help >/dev/null
 }
 
 setup_claude_code() {
@@ -89,8 +90,8 @@ setup_claude_code() {
 	export PATH="$HOME/.local/bin:$HOME/.bun/bin:$PATH"
 	hash -r
 
-	install_zhtw_mcp
-	claude mcp add --scope user zhtw-mcp -- "$HOME/.local/bin/zhtw-mcp"
+	install_sysprog21_mcp zhtw-mcp
+	install_sysprog21_mcp hackmd-mcp || echo "warn: hackmd-mcp not installed, skipping" >&2
 
 	local pensieve_dir="$HOME/.claude/skills/pensieve"
 	if [[ -d "$pensieve_dir" ]]; then

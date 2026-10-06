@@ -1,0 +1,10 @@
+{
+  "zhtw-mcp": {
+    "command": "$HOME/.local/bin/zhtw-mcp",
+    "args": []
+  },
+  "hackmd": {
+    "command": "$HOME/.local/bin/hackmd-mcp",
+    "args": []
+  }
+}

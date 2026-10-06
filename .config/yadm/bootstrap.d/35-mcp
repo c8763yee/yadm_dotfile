@@ -1,0 +1,29 @@
+#!/bin/bash
+# Register the shared stdio MCP servers (~/.config/agents/mcp.json) with Claude Code and Codex.
+export PATH="$HOME/.local/bin:$HOME/.bun/bin:$PATH"
+
+manifest="${XDG_CONFIG_HOME:-$HOME/.config}/agents/mcp.json"
+
+register() {
+	local name=$1 cmd=$2
+	shift 2
+	if [[ ! -x $cmd ]]; then
+		echo "skip $name: $cmd not installed" >&2
+		return 0
+	fi
+	if command -v claude >/dev/null; then
+		claude mcp get "$name" >/dev/null 2>&1 ||
+			claude mcp add --scope user "$name" -- "$cmd" "$@" || return 1
+	fi
+	if command -v codex >/dev/null; then
+		codex mcp get "$name" >/dev/null 2>&1 ||
+			codex mcp add "$name" -- "$cmd" "$@" || return 1
+	fi
+}
+
+while IFS= read -r entry; do
+	name=$(jq -r '.key' <<<"$entry")
+	cmd=$(jq -r '.value.command' <<<"$entry")
+	mapfile -t args < <(jq -r '.value.args[]' <<<"$entry")
+	register "$name" "${cmd//\$HOME/$HOME}" "${args[@]}" || exit 1
+done < <(jq -c 'to_entries[]' "$manifest")
