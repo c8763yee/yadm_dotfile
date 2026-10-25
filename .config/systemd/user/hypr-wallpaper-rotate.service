@@ -1,0 +1,12 @@
+[Unit]
+Description=Rotate HyDE wallpaper every minute
+After=graphical-session.target
+PartOf=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/bash -c 'while :; do %h/.config/hypr/custom/scripts/random-wallpaper-per-monitor.sh; sleep 60; done'
+
+[Install]
+WantedBy=graphical-session.target

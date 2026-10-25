@@ -62,3 +62,24 @@ hl.bind(
   hl.dsp.exec_cmd(HOME .. "/.config/hypr/custom/scripts/toggle-show-desktop.sh"),
   { description = "[Window Management] toggle show desktop" }
 )
+
+-- Load custom user modules
+-- 自動載入 custom/ 底下的所有 .lua 模組（等同於 source = custom/*.conf 的效果）
+local function source_custom_modules()
+  local ok, lfs = pcall(require, "lfs")
+  if not ok then return end
+
+  local custom_dir = HOME .. "/.config/hypr/custom"
+  if lfs.attributes(custom_dir, "mode") ~= "directory" then return end
+
+  for file in lfs.dir(custom_dir) do
+    -- 匹配 .lua 結尾，並排除 keep.lua 等特殊保留檔
+    if file:match("%.lua$") and file ~= "keep.lua" then
+      local mod_name = "custom." .. file:gsub("%.lua$", "")
+      package.loaded[mod_name] = nil -- 確保 reload 時會重新讀取
+      check_require(mod_name)
+    end
+  end
+end
+
+source_custom_modules()
