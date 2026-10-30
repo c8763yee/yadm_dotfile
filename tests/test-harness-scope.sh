@@ -66,4 +66,33 @@ if bash "$verify" --level invalid >/dev/null 2>&1; then
     echo 'verification accepted an unknown level' >&2
     exit 1
 fi
+# Regression: yadm manages HOME through a bare repository, without a .git
+# directory. The verification must still check both unstaged and staged diffs.
+bare_home="$tmp/bare-home"
+mkdir -p "$bare_home/.config/yadm/verify" "$bare_home/.config/agents" \
+         "$bare_home/.config/yadm/templates" "$bare_home/.claude" \
+         "$bare_home/.local/bin"
+cp "$verify" "$bare_home/.config/yadm/verify/run.sh"
+printf '#!/bin/sh\n' >"$bare_home/.config/yadm/bootstrap"
+printf '{}\n' >"$bare_home/.config/agents/mcp.json"
+printf '{}\n' >"$bare_home/.config/yadm/templates/antigravity-cli-settings.json"
+printf '{}\n' >"$bare_home/.claude/settings.json"
+printf '#!/usr/bin/env bash\n' >"$bare_home/.local/bin/pensieve-init"
+bare_repo="$bare_home/.local/share/yadm/repo.git"
+mkdir -p "$(dirname "$bare_repo")"
+git init --bare -q "$bare_repo"
+git --git-dir="$bare_repo" --work-tree="$bare_home" add .config/yadm/verify/run.sh
+git --git-dir="$bare_repo" --work-tree="$bare_home" \
+    -c user.name=Test -c user.email=test@example.invalid commit -qm 'baseline'
+
+# Ensure Git's bare repository fallback works even when 'yadm' is unavailable.
+HOME="$bare_home" bash "$bare_home/.config/yadm/verify/run.sh" --level quick
+
+# Unstaged whitespace violations must fail instead of producing false PASS.
+printf 'bad whitespace \n' >>"$bare_home/.config/yadm/verify/run.sh"
+if HOME="$bare_home" bash "$bare_home/.config/yadm/verify/run.sh" --level quick >/dev/null 2>&1; then
+    echo 'diff hygiene missed an unstaged whitespace violation in yadm' >&2
+    exit 1
+fi
+
 echo 'PASS harness scope'
