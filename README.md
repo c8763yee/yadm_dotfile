@@ -135,7 +135,8 @@ CRITICAL paths. It reuses the existing `logic-adversary` for bounded
 pre-implementation review, and installs `harness-verify` plus
 `failure-to-eval` as on-demand Skills for Claude Code, Codex and
 Antigravity CLI. Each client gets a link to one yadm-owned source under
-`~/.config/agents/skills/`; no separate reviewer Agent is added.
+`~/.config/agents/skills/`; generated links are ignored by yadm. No separate
+reviewer Agent is added.
 
 For this dotfile repository, `~/.config/yadm/agent/contract.md` defines
 ownership and verification requirements. The read-only verification entry is:

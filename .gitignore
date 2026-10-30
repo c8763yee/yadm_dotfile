@@ -11,3 +11,11 @@
 /.gemini/antigravity-cli/settings.json
 /.gemini/antigravity-cli/skills/
 /.gemini/config/mcp_config.json
+
+# Generated User-scope Skills: the source is tracked in ~/.config/agents/skills/.
+/.claude/skills/harness-verify
+/.claude/skills/failure-to-eval
+/.claude/skills/pensieve
+/.agents/skills/harness-verify
+/.agents/skills/failure-to-eval
+/.agents/skills/pensieve

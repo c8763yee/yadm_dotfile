@@ -11,6 +11,15 @@ done
 grep -q 'harness-verify' "$root/.config/agents/AGENTS.md"
 grep -q 'logic-adversary' "$root/.config/agents/AGENTS.md"
 
+# Bootstrap-created User-scope links must not appear as untracked dotfiles.
+for path in .claude/skills/harness-verify .claude/skills/failure-to-eval \
+            .agents/skills/harness-verify .agents/skills/failure-to-eval; do
+    git -C "$root" check-ignore -q "$path" || {
+        echo "Missing ignore rule for generated Skill: $path" >&2
+        exit 1
+    }
+done
+
 tmp=$(mktemp -d "${HARNESS_TEST_TMPDIR:-/var/tmp}/harness-scope.XXXXXX")
 trap 'rm -rf -- "$tmp"' EXIT
 export HOME="$tmp/home"

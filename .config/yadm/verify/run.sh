@@ -18,6 +18,7 @@ case "$level" in
 esac
 
 echo "[VERIFY] level=$level"
+incomplete=0
 sh -n "$root/.config/yadm/bootstrap"
 for script in "$root"/.config/yadm/bootstrap.d/* "$root"/.config/yadm/lib/*.sh \
               "$root"/.local/bin/pensieve-init "$root"/tests/test-*-scope.sh; do
@@ -34,6 +35,7 @@ elif [[ "$root" == "$(cd -- "$HOME" && pwd -P)" ]] && command -v yadm >/dev/null
     yadm diff --cached --check
 else
     echo 'NOT RUN diff hygiene: no Git checkout or yadm available'
+    incomplete=1
 fi
 
 if command -v jq >/dev/null 2>&1; then
@@ -43,6 +45,12 @@ if command -v jq >/dev/null 2>&1; then
     echo 'PASS JSON'
 else
     echo 'NOT RUN JSON: jq unavailable'
+    incomplete=1
+fi
+
+if (( incomplete != 0 )); then
+    echo 'NOT RUN verification incomplete; resolve missing tools before claiming PASS'
+    exit 2
 fi
 
 if [[ "$level" == quick ]]; then
