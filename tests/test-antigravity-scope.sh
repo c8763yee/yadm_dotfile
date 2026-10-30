@@ -34,5 +34,33 @@ printf '{"mcpServers":{"zhtw-mcp":{"command":"/custom/tool"},"other":{"command":
 bash "$root/.config/yadm/lib/sync-antigravity-mcp.sh"
 jq -e '.mcpServers["zhtw-mcp"].command == "/custom/tool" and .mcpServers.other.command == "/bin/true"' \
     "$HOME/.gemini/config/mcp_config.json" >/dev/null
+# Exercise the missing-binary branch with a stubbed official installer.
+rm "$HOME/.local/bin/agy"
+mkdir -p "$tmp/mockbin"
+cat >"$tmp/mockbin/curl" <<'MOCK_CURL'
+#!/usr/bin/env bash
+set -euo pipefail
+out=""
+has_official_url=0
+while (($#)); do
+    case "$1" in
+        -o) out=$2; shift 2 ;;
+        https://antigravity.google/cli/install.sh) has_official_url=1; shift ;;
+        *) shift ;;
+    esac
+done
+[[ "$has_official_url" == 1 && -n "$out" ]]
+cat >"$out" <<'INSTALLER'
+#!/usr/bin/env bash
+set -euo pipefail
+mkdir -p "$HOME/.local/bin"
+printf '#!/bin/sh\\nexit 0\\n' >"$HOME/.local/bin/agy"
+chmod +x "$HOME/.local/bin/agy"
+INSTALLER
+MOCK_CURL
+chmod +x "$tmp/mockbin/curl"
+PATH="$tmp/mockbin:$PATH" bash "$root/.config/yadm/bootstrap.d/34-antigravity"
+[[ -x "$HOME/.local/bin/agy" ]]
+
 test ! -e "$HOME/.pensieve"
 echo 'Antigravity scope checks passed'
