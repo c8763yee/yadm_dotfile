@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Explicit, project-scoped Pensieve initialization. Never called by bootstrap.
+set -euo pipefail
+
+usage() {
+    echo 'Usage: pensieve-init --project /absolute/path/to/git/repo' >&2
+}
+
+if [[ $# -ne 2 || $1 != '--project' ]]; then
+    usage
+    exit 2
+fi
+
+if [[ ! -d "$2" ]]; then
+    echo "Project directory does not exist: $2" >&2
+    exit 2
+fi
+
+project_root=$(cd -- "$2" && pwd -P)
+home_root=$(cd -- "$HOME" && pwd -P)
+
+if [[ "$project_root" == "$home_root" || "$project_root" == / || "$project_root" == /tmp || "$project_root" == /tmp/* ]]; then
+    echo "Pensieve cannot initialize this project root: $project_root" >&2
+    exit 2
+fi
+
+git_root=$(git -C "$project_root" rev-parse --show-toplevel 2>/dev/null) || {
+    echo "An explicit Git repository is required: $project_root" >&2
+    exit 2
+}
+git_root=$(cd -- "$git_root" && pwd -P)
+if [[ "$project_root" != "$git_root" ]]; then
+    echo "Specify the Git repository root: $git_root" >&2
+    exit 2
+fi
+
+skill_dir="$HOME/.claude/skills/pensieve"
+init_script="$skill_dir/.src/scripts/init-project-data.sh"
+if [[ ! -f "$init_script" ]]; then
+    echo 'Pensieve is not installed. Run yadm bootstrap to install the user-level skill.' >&2
+    exit 1
+fi
+
+printf 'Initializing Pensieve in %s\n' "$project_root"
+(
+    cd -- "$project_root"
+    PENSIEVE_PROJECT_ROOT="$project_root" bash "$init_script"
+)

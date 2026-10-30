@@ -1,0 +1,26 @@
+name: Pensieve scope checks
+
+on:
+  push:
+    paths:
+      - '.config/yadm/bootstrap.d/30-user'
+      - '.config/yadm/lib/install-pensieve.sh'
+      - '.local/bin/pensieve-init'
+      - '.claude/settings.json'
+      - 'tests/test-pensieve-scope.sh'
+      - '.github/workflows/pensieve-scope.yml'
+  pull_request:
+    paths:
+      - '.config/yadm/bootstrap.d/30-user'
+      - '.config/yadm/lib/install-pensieve.sh'
+      - '.local/bin/pensieve-init'
+      - '.claude/settings.json'
+      - 'tests/test-pensieve-scope.sh'
+      - '.github/workflows/pensieve-scope.yml'
+
+jobs:
+  scope:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tests/test-pensieve-scope.sh

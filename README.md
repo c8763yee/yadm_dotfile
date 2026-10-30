@@ -31,7 +31,8 @@ Bootstrap stages are independent and ordered:
 └── bootstrap.d/
     ├── 10-packages   # base packages
     ├── 20-desktop    # KDE / Niri / HyDE profile
-    ├── 30-user       # shell, tmux, Claude, crontab
+    ├── 30-user       # shell, tmux, Claude, shared skills, crontab
+    ├── 35-mcp        # MCP registration
     └── 40-system     # binaries and systemd integration
 ```
 
@@ -80,6 +81,33 @@ YADM_CLASS=Base yadm bootstrap
 ```
 
 After the first successful run, verify `yadm status --short`. Bootstrap must not mutate tracked files.
+
+## AI skills and Pensieve
+
+Bootstrap installs one user-scope Pensieve checkout at `~/.claude/skills/pensieve/`.
+Codex shares it through `~/.agents/skills/pensieve` (a symlink); the installer
+will not overwrite a preexisting unrelated skill. No project is initialized
+during bootstrap.
+
+**Project initialization requires an explicit command** naming the Git repository root:
+
+```bash
+pensieve-init --project "$HOME/src/my-project"
+```
+
+Only this command creates or updates `<project>/.pensieve/`. Running Bootstrap,
+starting Claude Code or Codex, or entering a project must not initialize it.
+The initializer refuses ambiguous paths, nested directories, `$HOME` itself,
+and non-Git directories. Because yadm uses `$HOME` as its working tree and
+Pensieve rejects `$HOME` as a project root, this initializer does not target
+the live yadm working tree.
+
+The deprecated Pensieve Claude marketplace plugin is no longer installed by
+Bootstrap. Existing users may need to uninstall the old plugin once with
+`claude plugin uninstall pensieve@kingkongshot-marketplace` to prevent duplicate
+skill registration. This does not delete project `.pensieve/` knowledge.
+
+Run `bash tests/test-pensieve-scope.sh` for the isolated scope regression checks.
 
 ## Testing
 

@@ -40,19 +40,11 @@
     "refreshInterval": 10
   },
   "enabledPlugins": {
-    "pensieve@kingkongshot-marketplace": true,
     "pua@pua-skills": true,
     "codex@openai-codex": true,
     "rust-analyzer-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
-    "kingkongshot-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "kingkongshot/Pensieve",
-        "ref": "claude-plugin"
-      }
-    },
     "pua-skills": {
       "source": {
         "source": "github",

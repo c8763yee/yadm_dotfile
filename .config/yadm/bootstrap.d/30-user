@@ -93,15 +93,7 @@ setup_claude_code() {
 	install_sysprog21_mcp zhtw-mcp
 	install_sysprog21_mcp hackmd-mcp || echo "warn: hackmd-mcp not installed, skipping" >&2
 
-	local pensieve_dir="$HOME/.claude/skills/pensieve"
-	if [[ -d "$pensieve_dir" ]]; then
-		git -C "$pensieve_dir" pull --ff-only
-	else
-		git clone -b main https://github.com/kingkongshot/Pensieve.git "$pensieve_dir"
-	fi
-	bash "$pensieve_dir/.src/scripts/init-project-data.sh"
-	claude plugin marketplace add kingkongshot/Pensieve#claude-plugin
-	claude plugin install pensieve@kingkongshot-marketplace --scope user
+	bash "$XDG_CONFIG_HOME/yadm/lib/install-pensieve.sh" || return 1
 	if [[ -n "$original_model" && -f "$settings" ]] &&
 		[[ $(jq -r '.model // empty' "$settings") != "$original_model" ]]; then
 		local restored
