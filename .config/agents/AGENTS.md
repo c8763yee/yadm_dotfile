@@ -32,3 +32,19 @@ The main agent owns adjudication, implementation, and compatibility.
 
 If no independent subagent can run, explicitly label the process
 *Self-review*. Never claim independent verification that did not occur.
+
+## Pensieve initialization for each project
+
+For the first substantive task in a writable standalone Git repository, the
+main agent MUST locate the actual repository root and check
+`<repo>/.pensieve/state.md`. This user-scope rule authorizes one-time
+initialization: if `.pensieve/` is absent, run
+`pensieve-init --project "<absolute-repository-root>"` before project work.
+If `.pensieve/` exists without `state.md`, report the incomplete state
+instead of overwriting it. Never reinitialize an already initialized project.
+
+Do not run initialization from bootstrap, startup hooks, or subagents. Skip
+chat-only requests, non-Git and read-only directories, `$HOME` (the live yadm
+working tree), `/`, and `/tmp`. Do not invent alternative roots to bypass
+those restrictions. When tools or permission are missing, explicitly report
+NOT RUN and continue with the original task when safe.
