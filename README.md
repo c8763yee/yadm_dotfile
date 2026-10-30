@@ -32,6 +32,7 @@ Bootstrap stages are independent and ordered:
     ├── 10-packages   # base packages
     ├── 20-desktop    # KDE / Niri / HyDE profile
     ├── 30-user       # shell, tmux, Claude, shared skills, crontab
+    ├── 34-antigravity # Antigravity CLI installation and settings
     ├── 35-mcp        # MCP registration
     └── 40-system     # binaries and systemd integration
 ```
@@ -84,30 +85,48 @@ After the first successful run, verify `yadm status --short`. Bootstrap must not
 
 ## AI skills and Pensieve
 
-Bootstrap installs one user-scope Pensieve checkout at `~/.claude/skills/pensieve/`.
-Codex shares it through `~/.agents/skills/pensieve` (a symlink); the installer
-will not overwrite a preexisting unrelated skill. No project is initialized
-during bootstrap.
+Bootstrap installs one user-level Pensieve source at
+`~/.claude/skills/pensieve/`. Codex and Antigravity CLI use symlinks at
+`~/.agents/skills/pensieve` and
+`~/.gemini/antigravity-cli/skills/pensieve`, respectively. Existing
+unrelated skills are never overwritten.
 
-**Project initialization requires an explicit command** naming the Git repository root:
+The user-scope `.config/agents/AGENTS.md` instructs the **main agent** to
+check `<repo>/.pensieve/state.md` on its first substantive task in each
+writable Git project. When no `.pensieve/` exists, the agent is authorized
+to initialize that specific project using:
 
 ```bash
 pensieve-init --project "$HOME/src/my-project"
 ```
 
-Only this command creates or updates `<project>/.pensieve/`. Running Bootstrap,
-starting Claude Code or Codex, or entering a project must not initialize it.
-The initializer refuses ambiguous paths, nested directories, `$HOME` itself,
-and non-Git directories. Because yadm uses `$HOME` as its working tree and
-Pensieve rejects `$HOME` as a project root, this initializer does not target
-the live yadm working tree.
+Neither Bootstrap, startup hooks, nor subagents initialize projects.
+Existing incomplete `.pensieve/` data must not be overwritten.
+Non-Git directories, nested directory paths and `$HOME` are rejected.
+The live yadm working tree is deliberately excluded because it is rooted
+at `$HOME`.
 
-The deprecated Pensieve Claude marketplace plugin is no longer installed by
-Bootstrap. Existing users may need to uninstall the old plugin once with
-`claude plugin uninstall pensieve@kingkongshot-marketplace` to prevent duplicate
-skill registration. This does not delete project `.pensieve/` knowledge.
+The obsolete Pensieve Claude marketplace plugin is no longer installed
+by Bootstrap; users with an older installation may remove it using
+`claude plugin uninstall pensieve@kingkongshot-marketplace`.
 
-Run `bash tests/test-pensieve-scope.sh` for the isolated scope regression checks.
+## Antigravity CLI
+
+The `34-antigravity` stage installs Google's official `agy` CLI on
+supported Linux/macOS hosts if it is missing. An existing installation
+is preserved. App-owned `~/.gemini/antigravity-cli/settings.json`
+is seeded once from a version-controlled template, using the
+`request-review` permission policy; later user changes are preserved.
+
+The CLI reads the already managed global `~/.gemini/AGENTS.md`,
+`logic-adversary` agent and shared Pensieve skill. The `35-mcp` stage
+adds available MCP definitions from `.config/agents/mcp.json` into
+Antigravity's global configuration, without overwriting existing entries.
+Runtime settings, MCP credentials and authentication remain app-owned.
+Run `agy` interactively to authenticate on first launch.
+
+For regression checks, run `bash tests/test-pensieve-scope.sh` and
+`bash tests/test-antigravity-scope.sh`.
 
 ## Testing
 
