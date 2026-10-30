@@ -34,11 +34,11 @@ fi
 for target_skill in "$codex_skill" "$agy_skill"; do
     if [[ -L "$target_skill" ]]; then
         if [[ "$(realpath -e -- "$target_skill")" != "$(realpath -e -- "$skill_dir")" ]]; then
-            echo "Refusing to replace an existing Codex skill link: $target_skill" >&2
+            echo "Refusing to replace an existing skill link: $target_skill" >&2
             exit 1
         fi
     elif [[ -e "$target_skill" ]]; then
-        echo "Refusing to overwrite an existing Codex skill: $target_skill" >&2
+        echo "Refusing to overwrite an existing skill: $target_skill" >&2
         exit 1
     else
         ln -s -- "$skill_dir" "$target_skill"
@@ -47,4 +47,4 @@ for target_skill in "$codex_skill" "$agy_skill"; do
 done
 
 printf 'Pensieve installed for Claude Code, Codex and Antigravity CLI (user scope).\n'
-printf 'Project initialization is opt-in: pensieve-init --project /path/to/repo\n'
+printf 'Project initialization follows user-scope AGENTS.md: pensieve-init --project /path/to/repo\n'
