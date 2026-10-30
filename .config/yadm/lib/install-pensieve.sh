@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Install one user-level Pensieve checkout for Claude Code and Codex.
+# Install one user-level Pensieve checkout for Claude Code, Codex and Antigravity CLI.
 # Project initialization is deliberately not part of this script.
 set -euo pipefail
 
 source_repo="${PENSIEVE_REPO_URL:-https://github.com/kingkongshot/Pensieve.git}"
 skill_dir="$HOME/.claude/skills/pensieve"
 codex_skill="$HOME/.agents/skills/pensieve"
+agy_skill="$HOME/.gemini/antigravity-cli/skills/pensieve"
 
-mkdir -p "$(dirname "$skill_dir")" "$(dirname "$codex_skill")"
+mkdir -p "$(dirname "$skill_dir")" "$(dirname "$codex_skill")" "$(dirname "$agy_skill")"
 
 if [[ -e "$skill_dir" || -L "$skill_dir" ]]; then
     # Without a nested Git checkout, git -C could resolve the enclosing yadm
@@ -30,17 +31,20 @@ if [[ ! -f "$skill_dir/SKILL.md" || ! -f "$skill_dir/.src/scripts/init-project-d
     exit 1
 fi
 
-if [[ -L "$codex_skill" ]]; then
-    if [[ "$(realpath -e -- "$codex_skill")" != "$(realpath -e -- "$skill_dir")" ]]; then
-        echo "Refusing to replace an existing Codex skill link: $codex_skill" >&2
+for target_skill in "$codex_skill" "$agy_skill"; do
+    if [[ -L "$target_skill" ]]; then
+        if [[ "$(realpath -e -- "$target_skill")" != "$(realpath -e -- "$skill_dir")" ]]; then
+            echo "Refusing to replace an existing Codex skill link: $target_skill" >&2
+            exit 1
+        fi
+    elif [[ -e "$target_skill" ]]; then
+        echo "Refusing to overwrite an existing Codex skill: $target_skill" >&2
         exit 1
+    else
+        ln -s -- "$skill_dir" "$target_skill"
     fi
-elif [[ -e "$codex_skill" ]]; then
-    echo "Refusing to overwrite an existing Codex skill: $codex_skill" >&2
-    exit 1
-else
-    ln -s -- "$skill_dir" "$codex_skill"
-fi
 
-printf 'Pensieve installed for Claude Code and Codex (user scope).\n'
+done
+
+printf 'Pensieve installed for Claude Code, Codex and Antigravity CLI (user scope).\n'
 printf 'Project initialization is opt-in: pensieve-init --project /path/to/repo\n'
