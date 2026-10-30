@@ -27,14 +27,33 @@ for script in "$root"/.config/yadm/bootstrap.d/* "$root"/.config/yadm/lib/*.sh \
 done
 echo 'PASS syntax'
 
-if git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+# A normal Git checkout and yadm's bare Git repo have different layouts.
+# Select the exact repository backing this script, never an ancestor checkout.
+git_top=$(git -C "$root" rev-parse --show-toplevel 2>/dev/null || :)
+home_root=$(cd -- "$HOME" && pwd -P)
+if [[ -n "$git_top" ]] && [[ "$(cd -- "$git_top" && pwd -P)" == "$root" ]]; then
     git -C "$root" diff --check
     git -C "$root" diff --cached --check
-elif [[ "$root" == "$(cd -- "$HOME" && pwd -P)" ]] && command -v yadm >/dev/null 2>&1; then
-    yadm diff --check
-    yadm diff --cached --check
+    echo 'PASS diff hygiene (Git checkout)'
+elif [[ "$root" == "$home_root" ]]; then
+    # Prefer yadm if available (its worktree/data paths may be customized).
+    # Otherwise Git can still inspect the standard XDG yadm bare repository.
+    yadm_repo="${XDG_DATA_HOME:-$HOME/.local/share}/yadm/repo.git"
+    if command -v yadm >/dev/null 2>&1 && yadm rev-parse --verify HEAD >/dev/null 2>&1; then
+        yadm diff --check
+        yadm diff --cached --check
+        echo 'PASS diff hygiene (yadm)'
+    elif [[ -d "$yadm_repo" ]] && git --git-dir="$yadm_repo" rev-parse --verify HEAD >/dev/null 2>&1; then
+        git --git-dir="$yadm_repo" --work-tree="$root" diff --check
+        git --git-dir="$yadm_repo" --work-tree="$root" diff --cached --check
+        echo 'PASS diff hygiene (yadm bare repository)'
+    else
+        echo "NOT RUN diff hygiene: no initialized yadm repository found for $root"
+        echo "Checked yadm on PATH and $yadm_repo"
+        incomplete=1
+    fi
 else
-    echo 'NOT RUN diff hygiene: no Git checkout or yadm available'
+    echo "NOT RUN diff hygiene: $root is neither a Git checkout root nor HOME=$home_root"
     incomplete=1
 fi
 
