@@ -35,7 +35,9 @@ git -C "$tmp/upstream" -c user.name=Test -c user.email=test@example.invalid comm
 )
 [[ -f "$HOME/.claude/skills/pensieve/SKILL.md" ]]
 [[ -L "$HOME/.agents/skills/pensieve" ]]
+[[ -L "$HOME/.gemini/antigravity-cli/skills/pensieve" ]]
 [[ "$(realpath -e -- "$HOME/.agents/skills/pensieve")" == "$(realpath -e -- "$HOME/.claude/skills/pensieve")" ]]
+[[ "$(realpath -e -- "$HOME/.gemini/antigravity-cli/skills/pensieve")" == "$(realpath -e -- "$HOME/.claude/skills/pensieve")" ]]
 [[ ! -e "$tmp/unrelated/.pensieve" && ! -e "$HOME/.pensieve" ]]
 
 # Reinstall is idempotent, and an invalid invocation does not create data.
