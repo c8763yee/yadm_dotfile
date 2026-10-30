@@ -16,6 +16,10 @@ while IFS= read -r entry; do
     cmd=$(jq -r '.value.command' <<<"$entry")
     cmd="${cmd//\$HOME/$HOME}"
     [[ -x "$cmd" ]] || continue
+    # Keep existing definitions and avoid rewriting the config on every bootstrap.
+    if jq -e --arg name "$name" '.mcpServers | has($name)' "$config" >/dev/null; then
+        continue
+    fi
     args=$(jq -c '.value.args // []' <<<"$entry")
     tmp=$(mktemp "${config}.tmp.XXXXXX")
     if jq --arg name "$name" --arg cmd "$cmd" --argjson args "$args" \
