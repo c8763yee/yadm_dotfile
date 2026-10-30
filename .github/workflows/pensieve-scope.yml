@@ -4,6 +4,14 @@ on:
   push:
     paths:
       - '.config/yadm/bootstrap.d/30-user'
+      - '.config/yadm/bootstrap.d/34-antigravity'
+      - '.config/yadm/bootstrap.d/35-mcp'
+      - '.config/yadm/lib/sync-antigravity-mcp.sh'
+      - '.config/yadm/templates/antigravity-cli-settings.json'
+      - '.config/agents/AGENTS.md'
+      - '.codex/AGENTS.md'
+      - '.gitignore'
+      - 'tests/test-antigravity-scope.sh'
       - '.config/yadm/lib/install-pensieve.sh'
       - '.local/bin/pensieve-init'
       - '.claude/settings.json'
@@ -12,6 +20,14 @@ on:
   pull_request:
     paths:
       - '.config/yadm/bootstrap.d/30-user'
+      - '.config/yadm/bootstrap.d/34-antigravity'
+      - '.config/yadm/bootstrap.d/35-mcp'
+      - '.config/yadm/lib/sync-antigravity-mcp.sh'
+      - '.config/yadm/templates/antigravity-cli-settings.json'
+      - '.config/agents/AGENTS.md'
+      - '.codex/AGENTS.md'
+      - '.gitignore'
+      - 'tests/test-antigravity-scope.sh'
       - '.config/yadm/lib/install-pensieve.sh'
       - '.local/bin/pensieve-init'
       - '.claude/settings.json'
@@ -24,3 +40,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: bash tests/test-pensieve-scope.sh
+      - run: bash tests/test-antigravity-scope.sh
