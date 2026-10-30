@@ -27,3 +27,8 @@ while IFS= read -r entry; do
 	mapfile -t args < <(jq -r '.value.args[]' <<<"$entry")
 	register "$name" "${cmd//\$HOME/$HOME}" "${args[@]}" || exit 1
 done < <(jq -c 'to_entries[]' "$manifest")
+
+# Antigravity CLI uses its own global MCP JSON configuration file.
+if command -v agy >/dev/null 2>&1; then
+    bash "${XDG_CONFIG_HOME:-$HOME/.config}/yadm/lib/sync-antigravity-mcp.sh"
+fi
