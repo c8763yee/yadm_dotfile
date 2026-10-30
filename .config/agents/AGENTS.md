@@ -48,3 +48,27 @@ chat-only requests, non-Git and read-only directories, `$HOME` (the live yadm
 working tree), `/`, and `/tmp`. Do not invent alternative roots to bypass
 those restrictions. When tools or permission are missing, explicitly report
 NOT RUN and continue with the original task when safe.
+
+## Lightweight engineering Harness
+
+For a substantive engineering change, classify risk before invoking optional
+workflows: FAST (mechanical, no behavior change), STANDARD (ordinary changes),
+or CRITICAL (ownership, state, security, compatibility, data loss, or verification
+infrastructure). A small diff may still be CRITICAL.
+
+- Keep the shortest valid path. Do not invoke a reviewer for FAST tasks.
+- Use the existing `logic-adversary` and `adversarial.md` for the bounded
+  *pre-implementation* review when its risk triggers apply; do not create
+  a second parallel adversarial review.
+- After changing behavior or code, use `harness-verify` for the applicable
+  checks; report actual PASS / FAIL / NOT RUN evidence. No check is needed
+  merely to answer a question or edit prose when verification is inapplicable.
+- Use `failure-to-eval` only after a material, reproducible failure that is
+  worth preventing. Do not capture every warning or invent a new Skill for a
+  one-off defect. Keep project-specific evidence inside that project.
+- Review again only on new material evidence or a changed design. Do not
+  repeatedly read unchanged context or launch agents merely to follow a ritual.
+
+When editing this yadm dotfile worktree, first read
+`~/.config/yadm/agent/contract.md`. This contract is specific to yadm and
+must not be applied to unrelated repositories.

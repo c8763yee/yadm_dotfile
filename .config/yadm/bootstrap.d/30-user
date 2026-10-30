@@ -94,6 +94,7 @@ setup_claude_code() {
 	install_sysprog21_mcp hackmd-mcp || echo "warn: hackmd-mcp not installed, skipping" >&2
 
 	bash "$XDG_CONFIG_HOME/yadm/lib/install-pensieve.sh" || return 1
+	bash "$XDG_CONFIG_HOME/yadm/lib/install-agent-harness.sh" || return 1
 	if [[ -n "$original_model" && -f "$settings" ]] &&
 		[[ $(jq -r '.model // empty' "$settings") != "$original_model" ]]; then
 		local restored

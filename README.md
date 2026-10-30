@@ -128,6 +128,33 @@ Run `agy` interactively to authenticate on first launch.
 For regression checks, run `bash tests/test-pensieve-scope.sh` and
 `bash tests/test-antigravity-scope.sh`.
 
+## Lightweight engineering Harness
+
+User-scope `AGENTS.md` routes engineering tasks into FAST / STANDARD /
+CRITICAL paths. It reuses the existing `logic-adversary` for bounded
+pre-implementation review, and installs `harness-verify` plus
+`failure-to-eval` as on-demand Skills for Claude Code, Codex and
+Antigravity CLI. Each client gets a link to one yadm-owned source under
+`~/.config/agents/skills/`; no separate reviewer Agent is added.
+
+For this dotfile repository, `~/.config/yadm/agent/contract.md` defines
+ownership and verification requirements. The read-only verification entry is:
+
+```bash
+bash ~/.config/yadm/verify/run.sh --level quick
+bash ~/.config/yadm/verify/run.sh --level standard
+bash ~/.config/yadm/verify/run.sh --level critical
+```
+
+Quick checks syntax, JSON and diff hygiene. Standard also runs isolated
+scope tests; critical reports QEMU integration NOT RUN (exit 2) until a
+specific guest-side validation is executed. No Git Hook, full QEMU run,
+automatic Skill generation or background Agent is installed.
+
+The first known integration gaps are recorded under
+`~/.config/yadm/agent/evals/`; an observation is not called a passing
+regression test until an executable check demonstrates it.
+
 ## Testing
 
 - [QEMU full test matrix](docs/QEMU_TESTING.md) — OS group × desktop profile, ownership, idempotency, reboot, GUI, and negative-contract tests.

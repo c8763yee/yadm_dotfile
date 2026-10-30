@@ -1,4 +1,4 @@
-name: Pensieve scope checks
+name: Agent scope checks
 
 on:
   push:
@@ -9,6 +9,11 @@ on:
       - '.config/yadm/lib/sync-antigravity-mcp.sh'
       - '.config/yadm/templates/antigravity-cli-settings.json'
       - '.config/agents/AGENTS.md'
+      - '.config/agents/skills/**'
+      - '.config/yadm/agent/**'
+      - '.config/yadm/verify/**'
+      - '.config/yadm/lib/install-agent-harness.sh'
+      - 'tests/test-harness-scope.sh'
       - '.codex/AGENTS.md'
       - '.gitignore'
       - 'tests/test-antigravity-scope.sh'
@@ -25,6 +30,11 @@ on:
       - '.config/yadm/lib/sync-antigravity-mcp.sh'
       - '.config/yadm/templates/antigravity-cli-settings.json'
       - '.config/agents/AGENTS.md'
+      - '.config/agents/skills/**'
+      - '.config/yadm/agent/**'
+      - '.config/yadm/verify/**'
+      - '.config/yadm/lib/install-agent-harness.sh'
+      - 'tests/test-harness-scope.sh'
       - '.codex/AGENTS.md'
       - '.gitignore'
       - 'tests/test-antigravity-scope.sh'
@@ -39,5 +49,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - run: bash tests/test-harness-scope.sh
       - run: bash tests/test-pensieve-scope.sh
       - run: bash tests/test-antigravity-scope.sh
