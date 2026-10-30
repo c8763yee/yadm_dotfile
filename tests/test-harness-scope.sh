@@ -12,10 +12,21 @@ grep -q 'harness-verify' "$root/.config/agents/AGENTS.md"
 grep -q 'logic-adversary' "$root/.config/agents/AGENTS.md"
 
 # Bootstrap-created User-scope links must not appear as untracked dotfiles.
+# The live yadm worktree uses a bare Git directory instead of a .git folder.
+check_ignored() {
+    if git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        git -C "$root" check-ignore -q "$1"
+    elif [[ "$root" == "$(cd "$HOME" && pwd -P)" ]] && command -v yadm >/dev/null 2>&1; then
+        yadm check-ignore -q "$1"
+    else
+        echo 'NOT RUN ignore checks: no Git checkout or yadm available' >&2
+        return 2
+    fi
+}
 for path in .claude/skills/harness-verify .claude/skills/failure-to-eval \
             .agents/skills/harness-verify .agents/skills/failure-to-eval; do
-    git -C "$root" check-ignore -q "$path" || {
-        echo "Missing ignore rule for generated Skill: $path" >&2
+    check_ignored "$path" || {
+        echo "Missing ignore rule or failed check for generated Skill: $path" >&2
         exit 1
     }
 done
