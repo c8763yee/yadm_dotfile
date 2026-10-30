@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Install Google Antigravity CLI without overwriting app-managed settings.
+set -euo pipefail
+export PATH="$HOME/.local/bin:$HOME/.gemini/antigravity-cli/bin:$PATH"
+settings="$HOME/.gemini/antigravity-cli/settings.json"
+template="${XDG_CONFIG_HOME:-$HOME/.config}/yadm/templates/antigravity-cli-settings.json"
+if [[ ! -e "$settings" ]]; then
+    mkdir -p "$(dirname "$settings")"
+    install -m 0600 "$template" "$settings"
+fi
+if command -v agy >/dev/null 2>&1; then
+    echo "Antigravity CLI already installed"
+    exit 0
+fi
+case "$(uname -s):$(uname -m)" in
+    Linux:x86_64|Linux:aarch64|Darwin:x86_64|Darwin:arm64) ;;
+    *) echo "Antigravity CLI platform not supported; skipping" >&2; exit 0 ;;
+esac
+installer=$(mktemp)
+trap 'rm -f -- "$installer"' EXIT
+curl -fsSL https://antigravity.google/cli/install.sh -o "$installer"
+[[ -s "$installer" ]] || { echo "Empty Antigravity installer" >&2; exit 1; }
+bash "$installer"
+hash -r
+if ! command -v agy >/dev/null 2>&1; then
+    echo "Antigravity installer finished, but agy was not found on PATH" >&2
+    exit 1
+fi
