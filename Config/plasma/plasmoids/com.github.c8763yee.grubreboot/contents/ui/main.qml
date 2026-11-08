@@ -19,8 +19,10 @@ PlasmoidItem {
         executable.connectSource(listCommand);
     }
 
-    function reboot(index) {
-        const command = "/usr/bin/pkexec /usr/bin/kernel_reboot --boot " + index;
+    function reboot(target) {
+        if (!/^[0-9]+(>[0-9]+)*$/.test(target))
+            return;
+        const command = "/usr/bin/pkexec /usr/bin/kernel_reboot --boot '" + target + "'";
         executable.connectSource(command);
         root.expanded = false;
     }
@@ -83,7 +85,7 @@ PlasmoidItem {
                     icon.name: modelData.depth > 0 ? "arrow-right" : "drive-harddisk-root"
                     leftPadding: Kirigami.Units.largeSpacing
                         + modelData.depth * Kirigami.Units.gridUnit
-                    onClicked: root.reboot(modelData.index)
+                    onClicked: root.reboot(modelData.target)
 
                     PlasmaComponents3.ToolTip {
                         text: modelData.target
