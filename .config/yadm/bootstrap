@@ -1,24 +1,30 @@
 #!/bin/sh
-. /etc/os-release
-
-echo "偵測到 Distro：$PRETTY_NAME"
+os=$(uname -s)
+case "$os" in
+    Linux) . /etc/os-release; echo "偵測到 Distro：$PRETTY_NAME" ;;
+    Darwin) echo "偵測到 macOS" ;;
+    *) echo "不支援的 OS: $os" >&2; exit 1 ;;
+esac
 echo ""
 
 WM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/yadm/packages/wm"
-
-if [ -n "$YADM_CLASS" ]; then
+if [ "$os" = "Darwin" ]; then
+    if [ -n "${YADM_CLASS:-}" ] && [ "$YADM_CLASS" != "MacOS" ]; then
+        echo "macOS 僅支援 MacOS class: $YADM_CLASS" >&2; exit 1
+    fi
+    CLASS=MacOS
+elif [ -n "${YADM_CLASS:-}" ]; then
     CLASS="$YADM_CLASS"
 else
     echo "可用環境："
     i=1
     for f in "$WM_DIR"/*.txt; do
-        # 只列主要清單，跳過 -aur.txt
         case "$f" in *-aur.txt) continue ;; esac
         name=$(basename "$f" .txt)
         case "$name" in
-            hyprland) label="Hyprland" ;;
-            kde) label="Kde" ;;
-            niri) label="Niri" ;;
+            hyprland) label=Hyprland ;;
+            kde) label=Kde ;;
+            niri) label=Niri ;;
             *) label="$name" ;;
         esac
         echo "  $i) $label"
@@ -27,22 +33,33 @@ else
     done
     echo "  $i) Base only"
     eval "WM_$i=Base"
-
     printf "選擇 [1-$i]: "
     read -r choice
     eval "CLASS=\$WM_$choice"
 fi
+[ -z "$CLASS" ] && echo "無效選項，使用 Base" && CLASS=Base
 
-[ -z "$CLASS" ] && echo "無效選項，使用 Base" && CLASS="Base"
+if [ "$os" = Linux ] && [ "$CLASS" = MacOS ]; then
+    echo "MacOS class 不適用於 Linux" >&2; exit 1
+fi
+if [ "$CLASS" = MacOS ]; then
+    command -v brew >/dev/null 2>&1 || {
+        echo "請先手動安裝並設定 Homebrew CLI" >&2; exit 1;
+    }
+    brew_env=$(brew shellenv) || exit 1
+    eval "$brew_env"
+fi
 
-yadm config local.class "$CLASS"
-yadm alt
+yadm config local.class "$CLASS" || exit 1
+yadm alt || exit 1
 echo "已設定 class: $CLASS"
 echo ""
-
 BOOTSTRAP_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/yadm/bootstrap.d"
 for script in "$BOOTSTRAP_DIR"/*; do
     [ -x "$script" ] || continue
+    case "$CLASS:$(basename "$script")" in
+        MacOS:20-desktop|MacOS:40-system) continue ;;
+    esac
     echo "==> $(basename "$script")"
     "$script" || exit $?
 done
