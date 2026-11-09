@@ -17,7 +17,7 @@ if [[ -e "$skill_dir" || -L "$skill_dir" ]]; then
         echo "Pensieve path is not a Git checkout: $skill_dir" >&2
         exit 1
     }
-    if [[ "$(realpath -e -- "$checkout_root")" != "$(realpath -e -- "$skill_dir")" ]]; then
+    if [[ "$(cd "$checkout_root" && pwd -P)" != "$(cd "$skill_dir" && pwd -P)" ]]; then
         echo "Refusing to update a non-Pensieve checkout: $skill_dir" >&2
         exit 1
     fi
@@ -33,7 +33,7 @@ fi
 
 for target_skill in "$codex_skill" "$agy_skill"; do
     if [[ -L "$target_skill" ]]; then
-        if [[ "$(realpath -e -- "$target_skill")" != "$(realpath -e -- "$skill_dir")" ]]; then
+        if [[ "$(cd "$target_skill" && pwd -P)" != "$(realpath -e -- "$skill_dir")" ]]; then
             echo "Refusing to replace an existing skill link: $target_skill" >&2
             exit 1
         fi
@@ -41,7 +41,7 @@ for target_skill in "$codex_skill" "$agy_skill"; do
         echo "Refusing to overwrite an existing skill: $target_skill" >&2
         exit 1
     else
-        ln -s -- "$skill_dir" "$target_skill"
+        ln -s "$skill_dir" "$target_skill"
     fi
 
 done
