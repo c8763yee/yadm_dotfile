@@ -126,4 +126,6 @@ zinit wait"1" lucid reset for \
     OMZP::history OMZP::postgres OMZP::ssh-agent OMZP::supervisor OMZP::tmux \
     OMZP::themes OMZP::vscode OMZP::wakeonlan
 
+source "${ZDOTDIR:-$HOME/.config/zsh}/command-not-found.zsh"
+
 zinit wait lucid light-mode for djui/alias-tips
