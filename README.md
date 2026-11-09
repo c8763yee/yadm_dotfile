@@ -10,6 +10,10 @@ The repository is laid out as the target `$HOME` tree. yadm owns configuration f
 - `Kde`
 - `Niri`
 - `Hyprland`
+- `MacOS` (iMac and Hackintosh, Intel and Apple Silicon)
+
+On macOS, bootstrap selects `MacOS` automatically. On Linux, existing
+classes and selection behavior are unchanged.
 
 Profile-specific files use yadm alternates (for example `##class.Niri`). After selecting the class, bootstrap runs `yadm alt` before provisioning.
 
@@ -29,15 +33,50 @@ Bootstrap stages are independent and ordered:
 ```text
 .config/yadm/bootstrap
 └── bootstrap.d/
-    ├── 10-packages   # base packages
-    ├── 20-desktop    # KDE / Niri / HyDE profile
+    ├── 10-packages   # Linux base packages / macOS Brewfile
+    ├── 20-desktop    # KDE / Niri / HyDE profile (Linux only)
     ├── 30-user       # shell, tmux, Claude, shared skills, crontab
     ├── 34-antigravity # Antigravity CLI installation and settings
     ├── 35-mcp        # MCP registration
-    └── 40-system     # binaries and systemd integration
+    └── 40-system     # binaries and systemd integration (Linux only)
 ```
 
 Shared package-manager primitives live in `.config/yadm/lib/`. Do not add config-copy or symlink deployment code back into bootstrap; if a file belongs in `$HOME`, track it at that path with yadm.
+
+## macOS installation
+
+The `MacOS` yadm class covers both iMac and Hackintosh. Homebrew CLI and
+yadm are **manual prerequisites**, not bootstrap responsibilities. Install
+Homebrew using its platform-specific instructions, configure `brew` on your
+PATH, then install yadm before running:
+
+```bash
+yadm clone --no-bootstrap https://github.com/c8763yee/yadm_dotfile.git
+yadm config local.class MacOS
+yadm alt
+yadm bootstrap
+```
+
+Bootstrap checks that Xcode or Xcode Command Line Tools are usable via
+`xcrun`. If missing, it requests CLT installation and stops until the
+installation finishes. It then validates the native Homebrew prefix
+(`/opt/homebrew` on Apple Silicon, `/usr/local` on Intel) and rejects
+Rosetta-based execution before installing
+`.config/yadm/packages/Brewfile.MacOS`. It does not reinstall Homebrew
+or yadm, nor replace app-owned configuration files.
+
+The class skips Linux-only desktop/system stages and does not import the
+Linux crontab. Existing shared User-scope skills, AI tooling, MCP and
+Zsh settings remain enabled.
+
+Current releases of `zhtw-mcp` and `hackmd-mcp` provide macOS arm64
+binaries but no Intel macOS archives. Intel hosts install these tools
+from source with Cargo, using Rust and Python from Homebrew.
+
+Neither Hackintosh's OpenCore/EFI configuration nor Xcode IDE installation
+is managed here. Run `bash tests/test-macos-bootstrap.sh` for isolated
+routing checks; GitHub Actions also checks both Darwin architectures.
+Real package installation and onboarding still need device-level tests.
 
 ## Migrating from the legacy layout
 
