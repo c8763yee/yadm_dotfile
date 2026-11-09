@@ -25,7 +25,7 @@ while IFS= read -r entry; do
     if jq --arg name "$name" --arg cmd "$cmd" --argjson args "$args" \
         '.mcpServers[$name] //= {"command": $cmd, "args": $args}' "$config" >"$tmp"; then
         chmod 600 "$tmp"
-        mv -f -- "$tmp" "$config"
+        mv -f "$tmp" "$config"
     else
         rm -f -- "$tmp"
         exit 1
