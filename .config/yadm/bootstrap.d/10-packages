@@ -10,7 +10,22 @@ fi
 . "$XDG_CONFIG_HOME/yadm/lib/packages.sh"
 install_required_packages() {
     pkg_update
-    install_packages "$PACKAGES_DIR/base.txt"
+    install_packages "$PACKAGES_DIR/base.txt" || return 1
+    # File ownership indexes are separate from installed-package metadata.
+    # Prepare them only on supported platforms; HyDE owns its shell behavior.
+    local class
+    class=$(yadm config local.class 2>/dev/null) || class=Base
+    case "$DISTRO:$class" in
+        arch:Hyprland) ;;
+        arch:*)
+            pkg_install pkgfile || return 1
+            sudo pkgfile --update || return 1
+            ;;
+        debian:*|ubuntu:*|raspbian:*)
+            pkg_install command-not-found || return 1
+            ;;
+        msys2:*) pacman -Fy --noconfirm || return 1 ;;
+    esac
     case "$DISTRO" in
     arch) sudo systemctl enable --now cronie ;;
     fedora) sudo dnf --enablerepo=fedora-debuginfo,updates-debuginfo install kernel-debuginfo ;;
