@@ -11,6 +11,17 @@ install_oh_my_tmux() {
 setup_zsh() {
 	local user current_shell zsh_path
 	user=$(id -un) || return 1
+	if [[ "$(uname -s)" == Darwin ]]; then
+		# Directory Services owns the login shell on macOS.
+		zsh_path=/bin/zsh
+		current_shell=$(dscl . -read "/Users/$user" UserShell 2>/dev/null |
+			awk '$1 == "UserShell:" { print $2 }') || return 1
+		[[ "$current_shell" == "$zsh_path" ]] && return 0
+		chsh -s "$zsh_path" "$user" || return 1
+		[[ $(dscl . -read "/Users/$user" UserShell 2>/dev/null |
+			awk '$1 == "UserShell:" { print $2 }') == "$zsh_path" ]]
+		return
+	fi
 	current_shell=$(getent passwd "$user" | cut -d: -f7) || return 1
 	zsh_path=$(command -v zsh) || return 1
 	[[ "$current_shell" == "$zsh_path" ]] && return 0
@@ -23,6 +34,24 @@ install_sysprog21_mcp() {
 	local base="https://github.com/sysprog21/$name/releases/download/latest"
 	local asset=""
 	local tmpdir=""
+
+	# Upstream publishes arm64 macOS binaries only; build Intel natively.
+	if [[ "$(uname -sm)" == "Darwin x86_64" ]]; then
+		[[ -x "$HOME/.local/bin/$name" ]] && return 0
+		command -v cargo >/dev/null 2>&1 || {
+			echo "Rust/Cargo required for Intel macOS $name" >&2
+			return 1
+		}
+		command -v python3 >/dev/null 2>&1 || {
+			echo "Python 3 required for Intel macOS $name" >&2
+			return 1
+		}
+		mkdir -p "$HOME/.local"
+		cargo install --locked --git "https://github.com/sysprog21/$name" \
+			--root "$HOME/.local" || return 1
+		"$HOME/.local/bin/$name" --help >/dev/null
+		return
+	fi
 
 	case "$(uname -sm)" in
 	"Linux x86_64")
@@ -143,4 +172,6 @@ apply_crontab() {
 setup_claude_code || exit 1
 install_oh_my_tmux || exit 1
 setup_zsh || exit 1
-apply_crontab
+if [[ "$(uname -s)" != Darwin ]]; then
+	apply_crontab || exit 1
+fi
