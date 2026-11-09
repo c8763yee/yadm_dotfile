@@ -19,7 +19,7 @@ for root in "${roots[@]}"; do
         target="$root/$name"
         source="$source_root/$name"
         if [[ -L "$target" ]]; then
-            [[ "$(realpath -e -- "$target" 2>/dev/null)" == "$(realpath -e -- "$source")" ]] || {
+            [[ "$(cd "$target" 2>/dev/null && pwd -P)" == "$(cd "$source" && pwd -P)" ]] || {
                 echo "Conflicting Harness skill link: $target" >&2
                 exit 1
             }
@@ -34,7 +34,7 @@ for root in "${roots[@]}"; do
     mkdir -p "$root"
     for name in "${names[@]}"; do
         target="$root/$name"
-        [[ -L "$target" ]] || ln -s -- "$source_root/$name" "$target"
+        [[ -L "$target" ]] || ln -s "$source_root/$name" "$target"
     done
 done
 
