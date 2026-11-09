@@ -1,0 +1,47 @@
+name: macOS bootstrap compatibility
+
+on:
+  push:
+    paths:
+      - '.config/yadm/bootstrap'
+      - '.config/yadm/bootstrap.d/**'
+      - '.config/yadm/lib/**'
+      - '.config/yadm/packages/Brewfile.MacOS'
+      - 'tests/test-macos-bootstrap.sh'
+      - '.github/workflows/macos-bootstrap.yml'
+  pull_request:
+    paths:
+      - '.config/yadm/bootstrap'
+      - '.config/yadm/bootstrap.d/**'
+      - '.config/yadm/lib/**'
+      - '.config/yadm/packages/Brewfile.MacOS'
+      - 'tests/test-macos-bootstrap.sh'
+      - '.github/workflows/macos-bootstrap.yml'
+
+jobs:
+  mock-bootstrap:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tests/test-macos-bootstrap.sh
+      - run: |
+          sh -n .config/yadm/bootstrap
+          for script in .config/yadm/bootstrap.d/* .config/yadm/lib/*.sh; do
+            bash -n "$script"
+          done
+
+  darwin-syntax:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sh -n .config/yadm/bootstrap
+          for script in .config/yadm/bootstrap.d/* .config/yadm/lib/*.sh; do
+            bash -n "$script"
+          done
+          brew bundle list --file=.config/yadm/packages/Brewfile.MacOS >/dev/null
+          zsh -n '.zshenv##class.MacOS' '.config/zsh/.zshenv##class.MacOS'
