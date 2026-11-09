@@ -59,11 +59,17 @@ yadm bootstrap
 
 Bootstrap checks that Xcode or Xcode Command Line Tools are usable via
 `xcrun`. If missing, it requests CLT installation and stops until the
-installation finishes. It then validates the native Homebrew prefix
-(`/opt/homebrew` on Apple Silicon, `/usr/local` on Intel) and rejects
-Rosetta-based execution before installing
-`.config/yadm/packages/Brewfile.MacOS`. It does not reinstall Homebrew
-or yadm, nor replace app-owned configuration files.
+installation finishes. It then validates the selected Homebrew installation
+before installing `.config/yadm/packages/Brewfile.MacOS`.
+Apple Silicon uses `/opt/homebrew` natively; Intel normally uses
+`/usr/local`. **1401 Intel Hackintosh also supports translated ARM64
+Homebrew under `/opt/homebrew`**, alongside Intel Homebrew.
+For that setup, 1401 selects the primary `brew`, while `abrew` and
+`ibrew` address the ARM64 and Intel installations explicitly.
+Bootstrap installs the Brewfile **only into the selected primary Homebrew**;
+it never automatically duplicates packages into both prefixes.
+Apple Silicon shells running under Rosetta are still rejected.
+Bootstrap does not reinstall Homebrew or yadm, nor replace app-owned settings.
 
 The class skips Linux-only desktop/system stages and does not import the
 Linux crontab. Existing shared User-scope skills, AI tooling, MCP and
