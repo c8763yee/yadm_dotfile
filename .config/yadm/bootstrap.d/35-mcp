@@ -24,7 +24,10 @@ register() {
 while IFS= read -r entry; do
 	name=$(jq -r '.key' <<<"$entry")
 	cmd=$(jq -r '.value.command' <<<"$entry")
-	mapfile -t args < <(jq -r '.value.args[]' <<<"$entry")
+	args=()
+	while IFS= read -r arg; do
+		args+=("$arg")
+	done < <(jq -r '.value.args[]?' <<<"$entry")
 	register "$name" "${cmd//\$HOME/$HOME}" "${args[@]}" || exit 1
 done < <(jq -c 'to_entries[]' "$manifest")
 
