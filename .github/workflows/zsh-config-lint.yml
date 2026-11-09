@@ -26,5 +26,5 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -d '' files < <(find .config/zsh -type f -name '*.zsh' -print0)
-          files+=(.zshenv##class.Base .zshenv##class.Kde .zshenv##class.Niri)
+          files+=(.zshenv##class.Base .zshenv##class.Kde .zshenv##class.Niri .zshenv##class.MacOS)
           zsh -n "${files[@]}"
