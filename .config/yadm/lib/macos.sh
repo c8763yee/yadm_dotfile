@@ -10,7 +10,7 @@ check_macos_toolchain() {
     return 1
 }
 install_macos_packages() {
-    local arch prefix expected arm_capable
+    local arch prefix arm_capable
     check_macos_toolchain || return 1
     arch=$(uname -m) || return 1
     arm_capable=$(sysctl -n hw.optional.arm64 2>/dev/null || :)
@@ -18,14 +18,20 @@ install_macos_packages() {
         echo "請改用原生 ARM64 終端機，勿以 Rosetta 執行" >&2; return 1
     fi
     case "$arch" in
-        arm64) expected=/opt/homebrew ;;
-        x86_64) expected=/usr/local ;;
+        arm64|x86_64) ;;
         *) echo "不支援的架構: $arch" >&2; return 1 ;;
     esac
     command -v brew >/dev/null 2>&1 || { echo "找不到 brew" >&2; return 1; }
     prefix=$(brew --prefix) || return 1
-    [[ "$prefix" == "$expected" ]] || {
-        echo "Homebrew 架構不符: $prefix (預期 $expected)" >&2; return 1;
-    }
+
+    # 1401 can translate ARM64 Homebrew on Intel Hackintosh. The active
+    # Homebrew prefix selects the package target, not uname -m alone.
+    case "$arch:$prefix" in
+        arm64:/opt/homebrew|x86_64:/usr/local|x86_64:/opt/homebrew) ;;
+        *)
+            echo "不支援的 Homebrew 組態: $arch / $prefix" >&2
+            return 1
+            ;;
+    esac
     brew bundle --file="$PACKAGES_DIR/Brewfile.MacOS"
 }
