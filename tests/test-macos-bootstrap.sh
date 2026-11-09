@@ -54,6 +54,15 @@ bash "$stage"
 grep -q 'brew bundle --file=' "$TEST_LOG"
 TEST_ARCH=x86_64 TEST_ARM_CAPABLE=0 TEST_PREFIX=/usr/local bash "$stage"
 
+# 1401 permits translated ARM64 Homebrew as the selected primary on Intel.
+: >"$TEST_LOG"
+TEST_ARCH=x86_64 TEST_ARM_CAPABLE=0 TEST_PREFIX=/opt/homebrew bash "$stage"
+grep -q 'brew bundle --file=' "$TEST_LOG"
+
+if TEST_ARCH=x86_64 TEST_ARM_CAPABLE=0 TEST_PREFIX=/other bash "$stage" >/dev/null 2>&1; then
+    echo "Unsupported Homebrew prefix was accepted" >&2; exit 1
+fi
+
 if TEST_ARCH=x86_64 TEST_ARM_CAPABLE=1 TEST_PREFIX=/usr/local bash "$stage" >/dev/null 2>&1; then
     echo "Rosetta incorrectly accepted" >&2; exit 1
 fi
