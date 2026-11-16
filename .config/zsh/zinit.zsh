@@ -123,7 +123,12 @@ zinit wait"1" lucid reset for \
     OMZP::docker OMZP::docker-compose OMZP::poetry OMZP::git-commit \
     OMZP::git-auto-fetch OMZP::ssh OMZP::sudo OMZP::git-hubflow \
     OMZP::git-lfs OMZP::alias-finder OMZP::uv OMZP::colored-man-pages OMZP::gh \
-    OMZP::history OMZP::postgres OMZP::ssh-agent OMZP::supervisor OMZP::tmux \
+    OMZP::history OMZP::postgres OMZP::supervisor OMZP::tmux \
     OMZP::themes OMZP::vscode OMZP::wakeonlan
+
+if [[ ! -r "$HOME/Scripts/agent-bridge.sh" ]]; then
+    SHORT_HOST="${SHORT_HOST:-${HOST%%.*}}"
+    zinit wait"1" lucid reset for OMZP::ssh-agent
+fi
 
 zinit wait lucid light-mode for djui/alias-tips

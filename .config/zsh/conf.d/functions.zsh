@@ -170,3 +170,7 @@ if [ -z "$SETUP_PORTPROXY_DONE" ]; then
 	setup_portproxy
 	export SETUP_PORTPROXY_DONE=1
 fi
+
+if [[ -z "${SSH_CONNECTION-}" ]] && [[ -r "$HOME/Scripts/agent-bridge.sh" ]] && grep -qEi "(microsoft|wsl)" /proc/version &>/dev/null; then
+	source "$HOME/Scripts/agent-bridge.sh"
+fi
