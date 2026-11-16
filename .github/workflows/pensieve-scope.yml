@@ -13,6 +13,13 @@ on:
       - '.config/yadm/agent/**'
       - '.config/yadm/verify/**'
       - '.config/yadm/lib/install-agent-harness.sh'
+      - '.config/yadm/lib/install-ponytail.sh'
+      - '.config/ponytail/**'
+      - '.config/agents/prompts/**'
+      - '.claude/agents/logic-adversary.md'
+      - '.codex/agents/logic-adversary.toml'
+      - '.gemini/config/agents/logic-adversary/agent.md'
+      - 'tests/test-ponytail-scope.sh'
       - 'tests/test-harness-scope.sh'
       - '.codex/AGENTS.md'
       - '.gitignore'
@@ -34,6 +41,13 @@ on:
       - '.config/yadm/agent/**'
       - '.config/yadm/verify/**'
       - '.config/yadm/lib/install-agent-harness.sh'
+      - '.config/yadm/lib/install-ponytail.sh'
+      - '.config/ponytail/**'
+      - '.config/agents/prompts/**'
+      - '.claude/agents/logic-adversary.md'
+      - '.codex/agents/logic-adversary.toml'
+      - '.gemini/config/agents/logic-adversary/agent.md'
+      - 'tests/test-ponytail-scope.sh'
       - 'tests/test-harness-scope.sh'
       - '.codex/AGENTS.md'
       - '.gitignore'
@@ -52,3 +66,4 @@ jobs:
       - run: bash tests/test-harness-scope.sh
       - run: bash tests/test-pensieve-scope.sh
       - run: bash tests/test-antigravity-scope.sh
+      - run: bash tests/test-ponytail-scope.sh
