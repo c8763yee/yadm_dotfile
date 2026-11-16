@@ -1,3 +1,5 @@
+[[ -o interactive ]] || return 0
+
 bindkey -M emacs '^[[1;5D' backward-word
 bindkey -M emacs '^[[1;5C' forward-word
 bindkey -M viins '^[[1;5D' backward-word

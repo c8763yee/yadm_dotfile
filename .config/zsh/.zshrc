@@ -10,12 +10,13 @@ if (( ! $+functions[zinit] )); then
 fi
 
 # PATH settings
+typeset -U path PATH fpath FPATH
 export PATH=$HOME/.local/bin${PATH:+:${PATH}}
-if [[ -n $(command -v snap 2> /dev/null) ]]; then
+if (( $+commands[snap] )); then
 	export PATH=/snap/bin:$PATH
 fi
 
-if [[ -n $(command -v nvidia-smi 2> /dev/null) ]]; then
+if (( $+commands[nvidia-smi] )); then
 	export PATH=/opt/cuda/bin:$PATH
 	export LD_LIBRARY_PATH=/opt/cuda/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 fi
@@ -38,9 +39,9 @@ EOF
 )
 
 export EDITOR=vim
-if [[ -n $(command -v nvim) ]]; then
+if (( $+commands[nvim] )); then
 	export EDITOR=nvim
-elif [[ -n $(command -v nano) ]]; then
+elif (( $+commands[nano] )); then
 	export EDITOR=nano
 fi
 

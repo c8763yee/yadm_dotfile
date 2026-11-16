@@ -1,3 +1,5 @@
+[[ -o interactive ]] || return 0
+
 # pacman aliases
 alias pS='sudo pacman -S --needed'
 alias pR='sudo pacman -R'

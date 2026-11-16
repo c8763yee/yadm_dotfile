@@ -29,7 +29,6 @@ zinit_prefetch_git_plugins() {
         zsh-users/zsh-history-substring-search
         Aloxaf/fzf-tab
         zdharma-continuum/fast-syntax-highlighting
-        djui/alias-tips
     )
 
     command mkdir -p "$ZINIT[PLUGINS_DIR]"
@@ -76,14 +75,25 @@ zinit-update-parallel() {
 # Initialize Zsh's completion system. Fedora's _dnf5 completion uses
 # `dnf5 --complete` to search package names from enabled repositories.
 autoload -Uz compinit
-compinit -d "${ZDOTDIR:-$HOME}/.zcompdump"
+if [[ -f "${ZDOTDIR:-$HOME}/.zcompdump" ]]; then
+    compinit -C -d "${ZDOTDIR:-$HOME}/.zcompdump"
+else
+    compinit -d "${ZDOTDIR:-$HOME}/.zcompdump"
+fi
 
 # Local generated completions live outside HyDE-owned completion paths.
-# Load them only after compinit has defined compdef.
+# Register lightweight lazy-load stubs after compinit has defined compdef so
+# large completion scripts (e.g. uv.zsh) are only parsed on first Tab press.
 for completion in "${ZDOTDIR:-$HOME/.config/zsh}"/conf.d/autocompletion/*.zsh(N); do
-    source "$completion"
+    _comp_cmd="${${completion:t}%.zsh}"
+    eval "_lazy_comp_${_comp_cmd}() {
+        unfunction _lazy_comp_${_comp_cmd}
+        source ${(q)completion}
+        (( \$+functions[_${_comp_cmd}] )) && _${_comp_cmd} \"\$@\"
+    }"
+    compdef "_lazy_comp_${_comp_cmd}" "$_comp_cmd"
 done
-unset completion
+unset completion _comp_cmd
 
 # Load plugins and themes
 zinit ice depth=1
@@ -107,9 +117,6 @@ zinit wait lucid light-mode for \
 # Must Load OMZ Git library
 zi snippet OMZL::git.zsh
 
-# Must Load OMZ Async prompt library
-zi snippet OMZL::async_prompt.zsh 
-
 zinit snippet OMZL::completion.zsh
 zinit snippet OMZL::history.zsh
 zinit snippet OMZL::key-bindings.zsh
@@ -121,8 +128,8 @@ zinit snippet OMZL::directories.zsh
 zinit wait"1" lucid reset for \
     OMZP::git OMZP::vim-interaction OMZP::pipenv OMZP::pip OMZP::aliases \
     OMZP::docker OMZP::docker-compose OMZP::poetry OMZP::git-commit \
-    OMZP::git-auto-fetch OMZP::ssh OMZP::sudo OMZP::git-hubflow \
-    OMZP::git-lfs OMZP::alias-finder OMZP::uv OMZP::colored-man-pages OMZP::gh \
+    OMZP::ssh OMZP::sudo OMZP::git-hubflow \
+    OMZP::git-lfs OMZP::uv OMZP::colored-man-pages OMZP::gh \
     OMZP::history OMZP::postgres OMZP::supervisor OMZP::tmux \
     OMZP::themes OMZP::vscode OMZP::wakeonlan
 
@@ -130,5 +137,3 @@ if [[ ! -r "$HOME/Scripts/agent-bridge.sh" ]]; then
     SHORT_HOST="${SHORT_HOST:-${HOST%%.*}}"
     zinit wait"1" lucid reset for OMZP::ssh-agent
 fi
-
-zinit wait lucid light-mode for djui/alias-tips
