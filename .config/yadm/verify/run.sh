@@ -77,7 +77,7 @@ if [[ "$level" == quick ]]; then
     exit 0
 fi
 
-for test in test-harness-scope.sh test-pensieve-scope.sh test-antigravity-scope.sh; do
+for test in test-harness-scope.sh test-pensieve-scope.sh test-antigravity-scope.sh test-ponytail-scope.sh; do
     bash "$root/tests/$test"
 done
 echo 'PASS standard isolated scope checks'

@@ -1,10 +1,5 @@
 # Global Instructions
 
-Before doing any work, read and follow these shared instruction files:
-
-- @~/.config/agents/prompts/linus.md
-- @~/.config/agents/prompts/chinese.md
-
 ## zh-TW Output Requirements
 
 Whenever a response contains Traditional Chinese, call the `zhtw` tool of the
@@ -23,15 +18,14 @@ Use the corrected text when the tool returns corrections.
 
 ## Pre-implementation Adversarial Review
 
-For nontrivial engineering tasks, read and follow
-`~/.config/agents/prompts/adversarial.md` when its review triggers apply.
+For nontrivial engineering changes involving ownership, state transitions,
+concurrency, APIs, or compatibility, prepare a concise design brief covering
+requirements, affected code, invariants, risks, and minimum checks. Delegate
+one bounded pre-implementation review to the native `logic-adversary` agent
+when available. Independently assess its findings before implementation.
 
-Use the platform's native `logic-adversary` subagent when available.
-Complete the bounded design review before changing implementation files.
-The main agent owns adjudication, implementation, and compatibility.
-
-If no independent subagent can run, explicitly label the process
-*Self-review*. Never claim independent verification that did not occur.
+If no independent subagent can run, label the process *Self-review*.
+Never claim independent verification that did not occur.
 
 ## Pensieve initialization for each project
 
@@ -57,9 +51,8 @@ or CRITICAL (ownership, state, security, compatibility, data loss, or verificati
 infrastructure). A small diff may still be CRITICAL.
 
 - Keep the shortest valid path. Do not invoke a reviewer for FAST tasks.
-- Use the existing `logic-adversary` and `adversarial.md` for the bounded
-  *pre-implementation* review when its risk triggers apply; do not create
-  a second parallel adversarial review.
+- Use the existing `logic-adversary` for the bounded pre-implementation
+  review when its risk triggers apply; do not duplicate the review.
 - After changing behavior or code, use `harness-verify` for the applicable
   checks; report actual PASS / FAIL / NOT RUN evidence. No check is needed
   merely to answer a question or edit prose when verification is inapplicable.

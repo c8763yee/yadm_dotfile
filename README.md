@@ -155,6 +155,33 @@ The obsolete Pensieve Claude marketplace plugin is no longer installed
 by Bootstrap; users with an older installation may remove it using
 `claude plugin uninstall pensieve@kingkongshot-marketplace`.
 
+## Ponytail plugins
+
+The `30-user` bootstrap stage installs [Ponytail](https://github.com/DietrichGebert/ponytail)
+as native **user-scope plugins** for Claude Code and Codex. It uses
+`.config/yadm/lib/install-ponytail.sh` rather than copying its Skills, so
+Claude's band and lifecycle hooks remain available. Node.js must be on PATH.
+Codex installation is skipped when the CLI is absent; rerun the installer
+after installing Codex:
+
+```bash
+bash ~/.config/yadm/lib/install-ponytail.sh
+```
+
+The tracked `.config/ponytail/config.json` defaults to `lite`.
+The tracked Claude settings declare the marketplace and enabled plugin,
+and **preserve** the existing `bunx -y ccstatusline@latest` status line.
+The Ponytail band is a separate UI above the prompt, so both can display
+simultaneously in Claude Code 2.1.290+ in supported terminal/desktop sessions.
+Use `/ponytail band on` to show it or `/ponytail band off` to hide it.
+It is unavailable in VS Code chat, cloud sessions, and `claude -p`.
+
+After installing for Codex, review and trust the two Ponytail lifecycle hooks
+through `/hooks` in an interactive Codex session, then start a new thread.
+The former global custom prompt Markdown files have been removed; the
+`.config/agents/prompts/` directory remains tracked via `.gitkeep`.
+`AGENTS.md` and the `logic-adversary` agents no longer reference deleted files.
+
 ## Antigravity CLI
 
 The `34-antigravity` stage installs Google's official `agy` CLI on
