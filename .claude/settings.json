@@ -92,8 +92,19 @@
     "claude-fable-5-2": {
       "effortLevel": "xhigh"
     },
+    "claude-sonnet-5-5": {
+      "effortLevel": "low"
+    },
     "claude-opus-5-5": {
-      "effortLevel": "medium"
+      "effortLevel": "high"
+    }
+  },
+  "pluginConfigs": {
+    "ponytail@ponytail": {
+      "options": {
+        "ledger": true,
+        "sendNames": true
+      }
     }
   },
   "tui": "fullscreen",

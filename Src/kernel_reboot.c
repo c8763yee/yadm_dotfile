@@ -85,6 +85,7 @@ static int parse_grubby_output(EntryList *list)
 	size_t capacity = 0;
 	char *title = NULL;
 	char *index = NULL;
+	char *id = NULL;
 	int rc = -1;
 
 	if (!fp) {
@@ -101,18 +102,23 @@ static int parse_grubby_output(EntryList *list)
 		value = unquote(value);
 		if (strcmp(line, "index") == 0) {
 			if (title && index)
-				entry_list_add(list, title, index, 0);
+				entry_list_add(list, title, id && *id ? id : title, 0);
 			free(title);
 			title = NULL;
+			free(id);
+			id = NULL;
 			free(index);
 			index = xstrdup(value);
 		} else if (strcmp(line, "title") == 0) {
 			free(title);
 			title = xstrdup(value);
+		} else if (strcmp(line, "id") == 0) {
+			free(id);
+			id = xstrdup(value);
 		}
 	}
 	if (title && index)
-		entry_list_add(list, title, index, 0);
+		entry_list_add(list, title, id && *id ? id : title, 0);
 	if (pclose(fp) != 0) {
 		fp = NULL;
 		fprintf(stderr, "grubby failed\n");
@@ -124,6 +130,7 @@ out:
 	free(line);
 	free(title);
 	free(index);
+	free(id);
 	if (fp)
 		(void)pclose(fp);
 	return rc;
@@ -162,6 +169,63 @@ static char *extract_title(const char *line)
 	memcpy(title, start + 1, length);
 	title[length] = '\0';
 	return title;
+}
+
+static char *grub_token(const char **cursor)
+{
+	const char *p = ltrim(*cursor);
+	char *token;
+	char quote = '\0';
+	size_t length = 0;
+
+	if (!*p || *p == '#')
+		return NULL;
+	token = xrealloc(NULL, strlen(p) + 1);
+	while (*p && (quote || !isspace((unsigned char)*p))) {
+		if (*p == '\\' && quote != '\'' && p[1]) {
+			token[length++] = p[1];
+			p += 2;
+		} else if ((*p == '\'' || *p == '"') &&
+			   (!quote || quote == *p)) {
+			quote = quote ? '\0' : *p;
+			p++;
+		} else {
+			token[length++] = *p++;
+		}
+	}
+	token[length] = '\0';
+	*cursor = p;
+	return token;
+}
+
+static char *extract_grub_id(const char *line)
+{
+	char *token;
+	size_t position = 0;
+
+	while ((token = grub_token(&line)) != NULL) {
+		/* Skip the command and title, which may contain option text. */
+		if (position++ >= 2) {
+			if (strcmp(token, "--id") == 0 ||
+			    strcmp(token, "$menuentry_id_option") == 0 ||
+			    strcmp(token, "${menuentry_id_option}") == 0) {
+				free(token);
+				token = grub_token(&line);
+				if (token && *token && strcmp(token, "{") != 0)
+					return token;
+				free(token);
+				return NULL;
+			}
+			if (strncmp(token, "--id=", 5) == 0 && token[5]) {
+				char *id = xstrdup(token + 5);
+
+				free(token);
+				return id;
+			}
+		}
+		free(token);
+	}
+	return NULL;
 }
 
 static void count_braces(const char *line, int *opens, int *closes)
@@ -220,8 +284,12 @@ static int parse_grub_cfg_entries(EntryList *list, int windows_only)
 			char *title = extract_title(trimmed);
 
 			if (title) {
+				char *native_id = extract_grub_id(trimmed);
+
 				snprintf(id, sizeof(id), "%zu", next_index[depth]++);
-				parents[depth] = xstrdup(id);
+				parents[depth] = xstrdup(native_id ? native_id :
+							windows_only ? title : id);
+				free(native_id);
 				free(title);
 				submenu_brace_at[depth++] = brace_level + opens;
 				next_index[depth] = 0;
@@ -234,10 +302,15 @@ static int parse_grub_cfg_entries(EntryList *list, int windows_only)
 				if (!windows_only ||
 				    strstr(trimmed, "--class windows") ||
 				    strncasecmp(title, "Windows", 7) == 0) {
-					char *target = build_target(parents, depth, id);
+					char *native_id = extract_grub_id(trimmed);
+					const char *component = native_id ? native_id :
+						windows_only ? title : id;
+					char *target = build_target(parents, depth,
+								    component);
 
 					entry_list_add(list, title, target, depth);
 					free(target);
+					free(native_id);
 				}
 				free(title);
 			}
@@ -305,8 +378,7 @@ static void print_json(const EntryList *list)
 static void print_menu(const EntryList *list)
 {
 	for (size_t i = 0; i < list->count; i++)
-		printf("%s) %s\n", list->items[i].target,
-		       list->items[i].title);
+		printf("%zu) %s\n", i, list->items[i].title);
 }
 
 static int run_cmd(char *const argv[])
@@ -355,6 +427,17 @@ static int boot_entry(const Entry *entry)
 
 static int find_entry(const EntryList *list, const char *target, size_t *index)
 {
+	if (isdigit((unsigned char)target[0])) {
+		char *end;
+		unsigned long long value;
+
+		errno = 0;
+		value = strtoull(target, &end, 10);
+		if (!errno && !*end && value < list->count) {
+			*index = (size_t)value;
+			return 0;
+		}
+	}
 	for (size_t i = 0; i < list->count; i++) {
 		if (strcmp(list->items[i].target, target) == 0) {
 			*index = i;
@@ -375,13 +458,13 @@ static int select_entry(const EntryList *list, size_t *index)
 		return -1;
 	}
 	print_menu(list);
-	printf("Select next boot entry by GRUB ID (e.g. 0 or 1>0): ");
+	printf("Select next boot entry by number or GRUB ID: ");
 	fflush(stdout);
 	if (getline(&line, &capacity, stdin) == -1)
 		goto out;
 	line[strcspn(line, "\n")] = '\0';
 	if (find_entry(list, line, index) != 0)
-		fprintf(stderr, "Invalid GRUB ID: %s\n", line);
+		fprintf(stderr, "Invalid boot entry: %s\n", line);
 	else
 		rc = 0;
 out:
@@ -400,7 +483,7 @@ static int boot_index(const EntryList *list, size_t index)
 
 static void usage(const char *program)
 {
-	fprintf(stderr, "Usage: %s [--list | --boot 'MENU[>SUBENTRY>...]']\n",
+	fprintf(stderr, "Usage: %s [--list | --boot 'INDEX|GRUB_ID[>SUBENTRY>...]']\n",
 		program);
 }
 
@@ -440,7 +523,7 @@ int main(int argc, char **argv)
 		size_t index;
 
 		if (find_entry(&entries, argv[2], &index) != 0) {
-			fprintf(stderr, "Invalid GRUB ID: %s\n", argv[2]);
+			fprintf(stderr, "Invalid boot entry: %s\n", argv[2]);
 			rc = EXIT_FAILURE;
 			goto out;
 		}

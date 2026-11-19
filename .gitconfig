@@ -42,3 +42,8 @@
 
 [includeIf "gitdir:~/linux-kernel/"]
 	path = ~/.config/git/kernel.conf
+[safe]
+	directory = /home/c8763yee/buildroot-output/build/bcc-v0.37.0
+	directory = /home/c8763yee/buildroot-output/build/bcc-v0.37.0/libbpf-tools/blazesym
+	directory = /home/c8763yee/buildroot-output/build/bcc-v0.37.0/src/cc/libbpf
+	directory = /home/c8763yee/buildroot-output/build/bcc-v0.37.0/libbpf-tools/bpftool

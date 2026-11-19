@@ -259,7 +259,10 @@ require("lazy").setup({
     -- source fallback, while Arch/CachyOS may provide cargo/rustc without rustup.
     -- The fff-nvim crate writes target/release/libfff_nvim.so, exactly where the
     -- Lua loader searches for it.
-    build = "cargo build --release -p fff-nvim",
+    build = function()
+	    require("fff.download").download_or_build_binary()
+    end,
+
     lazy = false, -- fff 会自行延迟初始化索引
     opts = {},
     keys = {
