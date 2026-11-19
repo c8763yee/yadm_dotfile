@@ -33,6 +33,18 @@
     ]
   },
   "model": "opus",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/notify-bell.sh"
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "bunx -y ccstatusline@latest",
@@ -73,19 +85,16 @@
     },
     "claude-opus-5": {
       "effortLevel": "high"
+    },
+    "claude-haiku-5-5": {
+      "effortLevel": "low"
+    },
+    "claude-fable-5-2": {
+      "effortLevel": "xhigh"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "medium"
     }
-  },
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/notify-bell.sh"
-          }
-        ]
-      }
-    ]
   },
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
