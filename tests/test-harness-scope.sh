@@ -10,6 +10,11 @@ for name in harness-verify failure-to-eval; do
 done
 grep -q 'harness-verify' "$root/.config/agents/AGENTS.md"
 grep -q 'logic-adversary' "$root/.config/agents/AGENTS.md"
+for agent_def in .claude/agents/logic-adversary.md \
+                 .codex/agents/logic-adversary.toml \
+                 .gemini/config/agents/logic-adversary/agent.md; do
+    grep -q '~/.config/agents/prompts/adversarial.md' "$root/$agent_def"
+done
 
 # Bootstrap-created User-scope links must not appear as untracked dotfiles.
 # The live yadm worktree uses a bare Git directory instead of a .git folder.
